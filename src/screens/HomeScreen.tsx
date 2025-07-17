@@ -19,7 +19,7 @@ export const HomeScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100">
+    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header
         title="Printers"
         subtitle="Manage your printers"
@@ -29,7 +29,7 @@ export const HomeScreen = ({ navigation }: any) => {
         }}
       />
       <ScrollView
-        className="flex-1 bg-slate-200"
+        className="flex-1 bg-slate-200 dark:bg-gray-800"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
@@ -37,17 +37,17 @@ export const HomeScreen = ({ navigation }: any) => {
         {printerCount === 0 ? (
           // Getting Started Card
           <View className="flex-1 items-center justify-center p-6">
-            <View className="bg-white rounded-lg p-8 border border-gray-300 max-w-sm w-full">
+            <View className="bg-white dark:bg-gray-900 rounded-lg p-8 border border-gray-300 dark:border-gray-700 max-w-sm w-full">
               <View className="items-center mb-6">
-                <View className="w-32 h-32 bg-blue-100 rounded-full items-center justify-center mb-12 mt-6">
+                <View className="w-32 h-32 bg-blue-100 dark:bg-blue-900/50 rounded-full items-center justify-center mb-12 mt-6">
                   <Image 
                     source={require('../../assets/CC.png')} 
                     className="w-20 h-20"
                     resizeMode="contain"
                   />
                 </View>
-                <Text className="text-4xl font-bold text-gray-800 mb-4 text-center">Getting Started</Text>
-                <Text className="text-gray-600 text-center leading-6">
+                <Text className="text-4xl font-bold text-gray-800 dark:text-gray-200 mb-4 text-center">Getting Started</Text>
+                <Text className="text-gray-600 dark:text-gray-400 text-center leading-6">
                   Get started by adding your first printer to monitor your prints.
                 </Text>
               </View>

@@ -23,9 +23,9 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100">
+    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Printer Details" subtitle="View printer information" />
-      <ScrollView className="flex-1 bg-slate-200">
+      <ScrollView className="flex-1 bg-slate-200 dark:bg-gray-800">
         <View className="p-2">
           {/* Back Button */}
           <TouchableOpacity 
@@ -33,11 +33,11 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
             onPress={handleBackPress}
           >
             <Ionicons name="arrow-back" size={24} color="#374151" />
-            <Text className="ml-2 text-gray-700 font-medium">BACK</Text>
+            <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">BACK</Text>
           </TouchableOpacity>
 
           {/* Video Stream WebView */}
-          <View className="bg-gray-800 rounded-lg mb-2 w-full overflow-hidden" style={{ aspectRatio:16/9}}>
+          <View className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden" style={{ aspectRatio:16/9}}>
             <WebView
               source={{ uri: '' }}
               style={{ 
@@ -72,17 +72,17 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
             onStopPrint={handleStopPrint}
           />
         {/* Printer Controls Card */}
-        <View className="bg-white rounded-lg border border-gray-300 p-4 mb-4 mt-2">
-            <Text className="text-xl font-bold text-gray-800 mb-4">CONTROLS</Text>
+        <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mb-4 mt-2">
+            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">CONTROLS</Text>
           {/* Light Toggle */}
-          <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200">
+          <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <View className="flex-row items-center">
               <Ionicons 
                 name={isLightOn ? "bulb" : "bulb-outline"} 
                 size={24} 
                 color={isLightOn ? "#3B82F6" : "#6B7280"} 
               />
-              <Text className="ml-3 text-gray-800 font-semibold text-lg">Printer Light</Text>
+              <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">Printer Light</Text>
             </View>
             <Switch
               value={isLightOn}

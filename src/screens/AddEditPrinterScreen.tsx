@@ -67,9 +67,9 @@ export const AddEditPrinterScreen = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100">
+    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Add/Edit Printer" subtitle="Add or edit a printer" />
-      <ScrollView className="flex-1 bg-slate-200">
+      <ScrollView className="flex-1 bg-slate-200 dark:bg-gray-800">
         <View className="p-2">
           {/* Back Button */}
           <TouchableOpacity 
@@ -77,21 +77,22 @@ export const AddEditPrinterScreen = () => {
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color="#374151" />
-            <Text className="ml-2 text-gray-700 font-medium">BACK</Text>
+            <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">BACK</Text>
           </TouchableOpacity>
           
           {/* Form Container */}
-          <View className="bg-white rounded-lg p-6 border border-gray-300">
-            <Text className="text-xl font-bold text-gray-800 mb-6">Printer Information</Text>
+          <View className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-300 dark:border-gray-700">
+            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Printer Information</Text>
             
             {/* Printer Name Input */}
             <View className="mb-4">
-              <Text className="text-gray-700 font-medium mb-2 text-lg">Printer Name</Text>
+              <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2 text-lg">Printer Name</Text>
               <TextInput
-                className={`border rounded-lg px-4 py-4 text-gray-800 ${
-                  errors.printerName ? 'border-red-500' : 'border-gray-300'
+                className={`border rounded-lg px-4 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 ${
+                  errors.printerName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Enter printer name"
+                placeholderTextColor="#9CA3AF"
                 value={formData.printerName}
                 onChangeText={(value) => handleInputChange('printerName', value)}
                 autoCapitalize="words"
@@ -103,12 +104,13 @@ export const AddEditPrinterScreen = () => {
 
             {/* IP Address Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 font-medium mb-2 text-lg">IP Address</Text>
+              <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2 text-lg">IP Address</Text>
               <TextInput
-                className={`border rounded-lg px-4 py-4 text-gray-800 ${
-                  errors.ipAddress ? 'border-red-500' : 'border-gray-300'
+                className={`border rounded-lg px-4 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 ${
+                  errors.ipAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="192.168.1.100"
+                placeholderTextColor="#9CA3AF"
                 value={formData.ipAddress}
                 onChangeText={(value) => handleInputChange('ipAddress', value)}
                 keyboardType="numeric"
