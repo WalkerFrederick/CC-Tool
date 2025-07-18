@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const SettingsScreen = () => {
   const { theme, setTheme } = useTheme();
@@ -61,6 +62,31 @@ export const SettingsScreen = () => {
     }
   };
 
+  const handleResetWelcomeFlow = () => {
+    Alert.alert(
+      'Reset Welcome Flow',
+      'Are you sure you want to reset the welcome flow? You will see it again the next time you open the app.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('hasLaunched');
+              Alert.alert('Success', 'The welcome flow has been reset.');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset the welcome flow.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Settings" subtitle="Manage your preferences" />
@@ -111,6 +137,19 @@ export const SettingsScreen = () => {
                 </View>
               </View>
               <Ionicons name="link" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
+              onPress={handleResetWelcomeFlow}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="refresh-outline" size={24} color="#6B7280" />
+                <View className="ml-3">
+                  <Text className="font-medium text-gray-800 dark:text-gray-200">Reset Welcome Flow</Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400">Show the welcome screen on next launch</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
             </TouchableOpacity>
             <TouchableOpacity className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
               <View className="flex-row items-center">
