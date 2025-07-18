@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +33,34 @@ export const SettingsScreen = () => {
     );
   };
 
+  const handleGitHubPress = async () => {
+    const url = 'https://github.com/WalkerFrederick/CC-Tool';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open GitHub link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open GitHub link');
+    }
+  };
+
+  const handleReportIssuesPress = async () => {
+    const url = 'https://github.com/WalkerFrederick/CC-Tool/issues';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open GitHub Issues link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open GitHub Issues link');
+    }
+  };
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Settings" subtitle="Manage your preferences" />
@@ -58,12 +86,28 @@ export const SettingsScreen = () => {
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </View>
             </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
+            <TouchableOpacity 
+              className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
+              onPress={handleGitHubPress}
+            >
               <View className="flex-row items-center">
                 <Ionicons name="logo-github" size={24} color="#6B7280" />
                 <View className="ml-3">
                   <Text className="font-medium text-gray-800 dark:text-gray-200">Github</Text>
                   <Text className="text-sm text-gray-500 dark:text-gray-400">View Source and Contribute</Text>
+                </View>
+              </View>
+              <Ionicons name="link" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
+              onPress={handleReportIssuesPress}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="bug-outline" size={24} color="#6B7280" />
+                <View className="ml-3">
+                  <Text className="font-medium text-gray-800 dark:text-gray-200">Report Issues</Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400">Report bugs and request features</Text>
                 </View>
               </View>
               <Ionicons name="link" size={20} color="#9CA3AF" />
@@ -86,6 +130,16 @@ export const SettingsScreen = () => {
                   <Text className="font-medium text-gray-800 dark:text-gray-200">App Version</Text>
                   <Text className="text-sm text-gray-500 dark:text-gray-400">V1.0.0</Text>
                 </View>
+              </View>
+            </View>
+
+            {/* Disclaimer */}
+            <View className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+              <View className="flex-row items-start">
+                <Ionicons name="warning-outline" size={20} color="#D97706" className="mt-0.5" />
+                <Text className="ml-2 text-sm text-yellow-800 dark:text-yellow-200 leading-5">
+                  This is an unofficial companion app for some SDCP-based printers. We are not associated with any manufacturers.
+                </Text>
               </View>
             </View>
           </View>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Progress from 'react-native-progress';
-import { Printer, ConnectionStatus } from '../types';
+import { Printer, ConnectionStatus, getPrintStatus, PrintStatus, isPausable, isResumable, isStoppable } from '../types';
 
 const formatTimeAgo = (timestamp: number, currentTime: number): string => {
   const diff = currentTime - timestamp;
@@ -70,8 +70,16 @@ export const PrinterCard = ({
   const printStatusFromPrinter = printInfo?.Status || 0;
   const filename = printInfo?.Filename || '';
 
+  // Get human-readable print status
+  const readablePrintStatus = getPrintStatus(printStatusFromPrinter);
+  
+  // Determine action availability based on print status
+  const canPause = isPausable(printStatusFromPrinter);
+  const canResume = isResumable(printStatusFromPrinter);
+  const canStop = isStoppable(printStatusFromPrinter);
+  
   // Determine if printer is actually printing based on status
-  const isPrinting = printStatusFromPrinter > 0;
+  const isPrinting = readablePrintStatus === 'printing';
   const layerProgress = totalLayer > 0 ? currentLayer / totalLayer : 0;
   const isConnected = printer.connectionStatus === 'connected';
 
@@ -137,8 +145,8 @@ export const PrinterCard = ({
                 <Ionicons name="thermometer" size={24} color="#4b5563" className="mb-2" />
                 <Text className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                   {boxTemp.toFixed(1)}°C
-                </Text>
-                <Text className="text-sm font-light text-gray-600 dark:text-gray-400">BOX</Text>
+                </Text> 
+                <Text className="text-sm font-light text-gray-600 dark:text-gray-400">CHAMBER</Text>
               </View>
             </View>
           )}
@@ -146,10 +154,10 @@ export const PrinterCard = ({
           {/* Print Status Section */}
           <View className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
             <View className="mb-2 flex-row items-center justify-between">
-              <Text className="text-gray-800 dark:text-gray-200">{isPrinting ? 'Printing' : 'Not Printing'}</Text>
+              <Text className="text-gray-800 dark:text-gray-200">Print Status</Text>
               {showPrintControls && onPrintControl && (
                 <View className="flex-row gap-2">
-                  {printStatus === 'paused' && onStopPrint && (
+                  {canStop && onStopPrint && (
                     <TouchableOpacity
                       onPress={onStopPrint}
                       className="rounded-full bg-red-100 p-2 dark:bg-red-900/50"
@@ -157,22 +165,18 @@ export const PrinterCard = ({
                       <Ionicons name="stop" size={20} color="#EF4444" />
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity
-                    onPress={onPrintControl}
-                    className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/50"
-                    activeOpacity={0.7}>
-                    <Ionicons
-                      name={
-                        printStatus === 'printing'
-                          ? 'pause'
-                          : printStatus === 'paused'
-                            ? 'play'
-                            : 'play'
-                      }
-                      size={20}
-                      color="#3B82F6"
-                    />
-                  </TouchableOpacity>
+                  {(canPause || canResume) && (
+                    <TouchableOpacity
+                      onPress={onPrintControl}
+                      className="rounded-full bg-blue-100 p-2 dark:bg-blue-900/50"
+                      activeOpacity={0.7}>
+                      <Ionicons
+                        name={canResume ? 'play' : 'pause'} 
+                        size={20}
+                        color="#3B82F6"
+                      />
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </View>
@@ -204,7 +208,12 @@ export const PrinterCard = ({
             ) : (
               <>
                 <Text className="mb-2 font-semibold text-gray-800 dark:text-gray-200">
-                  No active print
+                  {readablePrintStatus === 'idle' ? 'Idle' : 
+                   readablePrintStatus === 'completed' ? 'Print Completed' :
+                   readablePrintStatus === 'preparing' ? 'Preparing Print' :
+                   readablePrintStatus === 'paused' ? 'Print Paused' :
+                   readablePrintStatus === 'stopped' ? 'Print Stopped' :
+                   readablePrintStatus === 'unknown' ? 'Unknown Status' : 'No active print'}
                 </Text>
                 <Progress.Bar
                   progress={0}
@@ -215,7 +224,9 @@ export const PrinterCard = ({
                   borderWidth={0}
                   borderRadius={4}
                 />
-                <Text className="mt-2 text-sm text-gray-600 dark:text-gray-400">0% Complete</Text>
+                <Text className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                  {readablePrintStatus === 'completed' ? '100% Complete' : '0% Complete'}
+                </Text>
               </>
             )}
           </View>

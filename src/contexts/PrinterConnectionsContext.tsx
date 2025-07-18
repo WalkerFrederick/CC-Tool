@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AppState, AppStateStatus } from 'react-native';
 import { Printer, ConnectionStatus, PrinterStatus } from '../types';
 
 interface PrinterConnectionsContextType {
@@ -25,6 +26,7 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   const webSocketsRef = useRef<{ [key: string]: WebSocket }>({});
   const statusTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
   const printersRef = useRef<Printer[]>([]);
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   useEffect(() => {
     const loadPrinters = async () => {
@@ -52,6 +54,29 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     return () => {
       Object.values(webSocketsRef.current).forEach((ws) => ws.close());
       Object.values(statusTimersRef.current).forEach(timer => clearInterval(timer));
+    };
+  }, []);
+
+  // Handle app state changes (background/foreground)
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log('App state changed from', appStateRef.current, 'to', nextAppState);
+      
+      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
+        console.log('App came to foreground, reconnecting disconnected printers...');
+        // Small delay to ensure app is fully active
+        setTimeout(() => {
+          reconnectDisconnectedPrinters();
+        }, 1000);
+      }
+      
+      appStateRef.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
     };
   }, []);
 
@@ -260,10 +285,14 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       }
     };
 
-    ws.onerror = (error) => {
+    ws.onerror = (error: unknown) => {
       clearTimeout(timeout);
-      console.error(`WebSocket error for ${printer.printerName}:`, error);
-      updatePrinterStatus(printer.id, 'error');
+      console.error(`error for ${printer.printerName}:`, error);
+      if (error && (error as Error).message === "Software caused connection abort") {
+        updatePrinterStatus(printer.id, 'disconnected');
+      } else {
+        updatePrinterStatus(printer.id, 'error');
+      }
       stopStatusTimer(printer.id);
     };
 
@@ -350,6 +379,27 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   const reconnectAll = () => {
     console.log('Reconnecting to all printers...');
     printers.forEach(connectToPrinter);
+  };
+
+  const reconnectDisconnectedPrinters = () => {
+    console.log('Reconnecting only disconnected printers...');
+    console.log('Current printer statuses:', printersRef.current.map(p => `${p.printerName}: ${p.connectionStatus}`));
+    
+    const disconnectedPrinters = printersRef.current.filter(p => 
+      p.connectionStatus === 'disconnected' || 
+      p.connectionStatus === 'error' || 
+      p.connectionStatus === 'timeout'
+    );
+    
+    if (disconnectedPrinters.length > 0) {
+      console.log(`Found ${disconnectedPrinters.length} disconnected printers, reconnecting...`);
+      disconnectedPrinters.forEach(printer => {
+        console.log(`Attempting to reconnect to ${printer.printerName} (${printer.connectionStatus})`);
+        connectToPrinter(printer);
+      });
+    } else {
+      console.log('All printers are connected, no need to reconnect');
+    }
   };
 
   return (

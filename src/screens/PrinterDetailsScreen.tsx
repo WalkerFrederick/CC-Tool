@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Switch, RefreshControl } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,10 +11,9 @@ import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 export const PrinterDetailsScreen = ({ navigation }: any) => {
   const route = useRoute();
   const { printerId } = route.params as { printerId: string };
-  const { printers, sendCommand, reconnectAll } = usePrinterConnections();
+  const { printers, sendCommand, reconnectAll, removePrinter } = usePrinterConnections();
   const printer = printers.find(p => p.id === printerId);
 
-  const [printStatus, setPrintStatus] = useState<'printing' | 'paused'>('printing');
   const [refreshing, setRefreshing] = useState(false);
 
   const handleBackPress = () => {
@@ -22,11 +21,78 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   };
 
   const handlePrintControl = () => {
-    setPrintStatus(prev => prev === 'printing' ? 'paused' : 'printing');
+    if (!printer) return;
+    
+    const printStatusFromPrinter = printer.status?.PrintInfo?.Status || 0;
+    const canPause = printStatusFromPrinter === 13; // printing
+    const canResume = printStatusFromPrinter === 6; // paused
+    
+    if (canPause) {
+      // Send pause command
+      const pauseCommand = {
+        "Id": "",
+        "Data": {
+          "Cmd": 129,
+          "Data": {},
+          "RequestID": `pause-${Date.now()}`,
+          "MainboardID": "",
+          "TimeStamp": Date.now(),
+          "From": 1
+        }
+      };
+      console.log('Sending pause command:', pauseCommand);
+      sendCommand(printer.id, pauseCommand);
+    } else if (canResume) {
+      // Send resume command
+      const resumeCommand = {
+        "Id": "",
+        "Data": {
+          "Cmd": 131,
+          "Data": {},
+          "RequestID": `resume-${Date.now()}`,
+          "MainboardID": "",
+          "TimeStamp": Date.now(),
+          "From": 1
+        }
+      };
+      console.log('Sending resume command:', resumeCommand);
+      sendCommand(printer.id, resumeCommand);
+    }
   };
 
   const handleStopPrint = () => {
-    setPrintStatus('printing'); // Reset to printing state when stopped
+    if (!printer) return;
+    
+    Alert.alert(
+      "Cancel Print",
+      `Are you sure you want to cancel the print? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Stop Print",
+          style: "destructive",
+          onPress: () => {
+            // Send cancel command
+            const cancelCommand = {
+              "Id": "",
+              "Data": {
+                "Cmd": 130,
+                "Data": {},
+                "RequestID": `cancel-${Date.now()}`,
+                "MainboardID": "",
+                "TimeStamp": Date.now(),
+                "From": 1
+              }
+            };
+            console.log('Sending cancel command:', cancelCommand);
+            sendCommand(printer.id, cancelCommand);
+          }
+        }
+      ]
+    );
   };
 
   const onRefresh = useCallback(() => {
@@ -56,6 +122,29 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     };
     
     sendCommand(printer.id, command);
+  };
+
+  const handleDeletePrinter = () => {
+    if (!printer) return;
+    
+    Alert.alert(
+      "Delete Printer",
+      `Are you sure you want to delete ${printer.printerName}? This action cannot be undone.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            removePrinter(printer.id);
+            navigation.goBack();
+          }
+        }
+      ]
+    );
   };
 
   if (!printer) {
@@ -131,7 +220,6 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
             printer={printer}
             lastUpdate='3s ago'
             showPrintControls={true}
-            printStatus={printStatus}
             onPrintControl={handlePrintControl}
             onStopPrint={handleStopPrint}
           />
@@ -154,6 +242,25 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
               trackColor={{ false: "#D1D5DB", true: "#DBEAFE" }}
               thumbColor={isLightOn ? "#3B82F6" : "#9CA3AF"}
             />
+          </View>
+
+          {/* Delete Printer */}
+          <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <View className="flex-row items-center">
+              <Ionicons 
+                name="trash-outline" 
+                size={24} 
+                color="#EF4444" 
+              />
+              <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">Unlink Printer</Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleDeletePrinter}
+              className="bg-red-500 px-4 py-2 rounded-lg"
+              activeOpacity={0.7}
+            >
+              <Text className="text-white font-semibold">UNLINK</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

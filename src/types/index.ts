@@ -53,6 +53,44 @@ export interface PrintInfo {
   Progress: number;
 }
 
+export type PrintStatus = 'idle' | 'completed' | 'preparing' | 'printing' | 'paused' | 'stopped' | 'unknown';
+
+export const getPrintStatus = (status: number): PrintStatus => {
+  switch (status) {
+    case 0:
+      return 'idle';
+    case 6:
+      return 'paused';
+    case 8:
+      return 'stopped';
+    case 9:
+      return 'completed';
+    case 16:
+    case 1:
+    case 20:
+      return 'preparing';
+    case 13:
+      return 'printing';
+    default:
+      return 'unknown';
+  }
+};
+
+export const isPausable = (status: number): boolean => {
+  // Can pause when printing
+  return status === 13;
+};
+
+export const isResumable = (status: number): boolean => {
+  // Can resume when paused
+  return status === 6;
+};
+
+export const isStoppable = (status: number): boolean => {
+  // Can stop when printing, preparing, or paused
+  return status === 6;
+};
+
 export interface PrinterStatus {
   CurrentStatus: number[];
   TimeLapseStatus: number;

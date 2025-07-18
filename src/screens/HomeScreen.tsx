@@ -7,7 +7,7 @@ import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 
 export const HomeScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
-  const { printers, reconnectAll } = usePrinterConnections();
+  const { printers, reconnectAll, removePrinter } = usePrinterConnections();
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -23,8 +23,38 @@ export const HomeScreen = ({ navigation }: any) => {
     } else {
       Alert.alert(
         "Printer Offline",
-        "This printer is not connected. Please check the connection and try again.",
-        [{ text: "OK" }]
+        `${printer?.printerName} is not connected. What would you like to do?`,
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Delete Printer",
+            style: "destructive",
+            onPress: () => {
+              Alert.alert(
+                "Delete Printer",
+                `Are you sure you want to delete ${printer?.printerName}? This action cannot be undone.`,
+                [
+                  {
+                    text: "Cancel",
+                    style: "cancel"
+                  },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => {
+                      if (printer) {
+                        removePrinter(printer.id);
+                      }
+                    }
+                  }
+                ]
+              );
+            }
+          }
+        ]
       );
     }
   };
@@ -78,6 +108,8 @@ export const HomeScreen = ({ navigation }: any) => {
             {printers.map((printer) => (
               <View className="w-full p-2" key={printer.id}>
                 <PrinterCard 
+                  key={printer.id}
+                  
                   printer={printer}
                   onPress={() => handlePrinterPress(printer.id)}
                 />
