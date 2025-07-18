@@ -1,21 +1,32 @@
 import React, { useState, useCallback } from 'react';
-import { View, ScrollView, RefreshControl, Text, TouchableOpacity, Image } from 'react-native';
+import { View, ScrollView, RefreshControl, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { PrinterCard } from '../components/PrinterCard';
+import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 
 export const HomeScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
-  const [printerCount, setPrinterCount] = useState(2);
+  const { printers, reconnectAll } = usePrinterConnections();
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setPrinterCount(prev => (prev < 5 ? prev + 1 : prev));
+    reconnectAll();
+    // Keep the timeout to give visual feedback on the refresh control
     setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+  }, [reconnectAll]);
 
-  const handlePrinterPress = () => {
-    navigation.navigate('PrinterDetails');
+  const handlePrinterPress = (printerId: string) => {
+    const printer = printers.find(p => p.id === printerId);
+    if (printer?.connectionStatus === 'connected') {
+      navigation.navigate('PrinterDetails', { printerId });
+    } else {
+      Alert.alert(
+        "Printer Offline",
+        "This printer is not connected. Please check the connection and try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   return (
@@ -34,7 +45,7 @@ export const HomeScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {printerCount === 0 ? (
+        {printers.length === 0 ? (
           // Getting Started Card
           <View className="flex-1 items-center justify-center p-6">
             <View className="bg-white dark:bg-gray-900 rounded-lg p-8 border border-gray-300 dark:border-gray-700 max-w-sm w-full">
@@ -64,10 +75,11 @@ export const HomeScreen = ({ navigation }: any) => {
         ) : (
           // Printer Cards
           <>
-            {Array.from({ length: printerCount }).map((_, idx) => (
-              <View className="w-full p-2" key={idx}>
+            {printers.map((printer) => (
+              <View className="w-full p-2" key={printer.id}>
                 <PrinterCard 
-                  onPress={handlePrinterPress}
+                  printer={printer}
+                  onPress={() => handlePrinterPress(printer.id)}
                 />
               </View>
             ))}

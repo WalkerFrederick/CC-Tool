@@ -1,14 +1,21 @@
-import { View, Text, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
-import { PrinterCard } from '~/components/PrinterCard';
-import { useState } from 'react';
+import { PrinterCard } from '../components/PrinterCard';
+import { useState, useCallback } from 'react';
 import { WebView } from 'react-native-webview';
+import { useRoute } from '@react-navigation/native';
+import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 
 export const PrinterDetailsScreen = ({ navigation }: any) => {
-  const [isLightOn, setIsLightOn] = useState(false);
+  const route = useRoute();
+  const { printerId } = route.params as { printerId: string };
+  const { printers, sendCommand, reconnectAll } = usePrinterConnections();
+  const printer = printers.find(p => p.id === printerId);
+
   const [printStatus, setPrintStatus] = useState<'printing' | 'paused'>('printing');
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -22,10 +29,59 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     setPrintStatus('printing'); // Reset to printing state when stopped
   };
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    reconnectAll();
+    // Keep the timeout to give visual feedback on the refresh control
+    setTimeout(() => setRefreshing(false), 1000);
+  }, [reconnectAll]);
+
+  const handleLightToggle = (isOn: boolean) => {
+    if (!printer) return;
+    
+    const command = {
+      "Id": `${printer.printerName}-id-${Date.now()}`,
+      "Data": {
+        "Cmd": 403,
+        "Data": {
+          "LightStatus": {
+            "SecondLight": isOn
+          }
+        },
+        "RequestID": `light-toggle-${Date.now()}`,
+        "MainboardID": "",
+        "TimeStamp": 0,
+        "From": 1
+      }
+    };
+    
+    sendCommand(printer.id, command);
+  };
+
+  if (!printer) {
+    return (
+      <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
+        <Header title="Error" subtitle="Printer not found" />
+        <View className="flex-1 justify-center items-center">
+          <Text className="text-red-500">Could not find the specified printer.</Text>
+          <TouchableOpacity onPress={handleBackPress} className="mt-4 p-2 bg-blue-500 rounded">
+            <Text className="text-white">Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Get light status from printer data
+  const isLightOn = printer.status?.LightStatus?.SecondLight === 1;
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Printer Details" subtitle="View printer information" />
-      <ScrollView className="flex-1 bg-slate-200 dark:bg-gray-800">
+      <ScrollView 
+        className="flex-1 bg-slate-200 dark:bg-gray-800"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View className="p-2">
           {/* Back Button */}
           <TouchableOpacity 
@@ -38,33 +94,41 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
 
           {/* Video Stream WebView */}
           <View className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden" style={{ aspectRatio:16/9}}>
-            <WebView
-              source={{ uri: '' }}
-              style={{ 
-                flex: 1, 
-                backgroundColor: 'transparent',
-                margin: 0,
-                padding: 0
-              }}
-              javaScriptEnabled={false}
-              domStorageEnabled={false}
-              scalesPageToFit={true}
-              allowsInlineMediaPlayback={true}
-              mediaPlaybackRequiresUserAction={false}
-              onError={(syntheticEvent) => {
-                const { nativeEvent } = syntheticEvent;
-                console.warn('WebView error: ', nativeEvent);
-              }}
-              onHttpError={(syntheticEvent) => {
-                const { nativeEvent } = syntheticEvent;
-                console.warn('WebView HTTP error: ', nativeEvent);
-              }}
-            />
+            {printer.videoUrl ? (
+              <WebView
+                source={{ uri: "http://" + printer.videoUrl }}
+                style={{ 
+                  flex: 1, 
+                  backgroundColor: 'transparent',
+                  margin: 0,
+                  padding: 0
+                }}
+                javaScriptEnabled={false}
+                domStorageEnabled={false}
+                scalesPageToFit={true}
+                allowsInlineMediaPlayback={true}
+                mediaPlaybackRequiresUserAction={false}
+                onError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.warn('WebView error: ', nativeEvent);
+                }}
+                onHttpError={(syntheticEvent) => {
+                  const { nativeEvent } = syntheticEvent;
+                  console.warn('WebView HTTP error: ', nativeEvent);
+                }}
+              />
+            ) : (
+              <View className="flex-1 justify-center items-center bg-gray-700">
+                <Ionicons name="videocam-off" size={48} color="#9CA3AF" />
+                <Text className="text-gray-400 mt-2 text-center">Video feed not available</Text>
+                <Text className="text-gray-500 mt-1 text-sm text-center">Waiting for video stream...</Text>
+              </View>
+            )}
           </View>
 
           {/* Main Printer Card */}
-          <PrinterCard 
-            showTemps={false} 
+          <PrinterCard
+            printer={printer}
             lastUpdate='3s ago'
             showPrintControls={true}
             printStatus={printStatus}
@@ -86,7 +150,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
             </View>
             <Switch
               value={isLightOn}
-              onValueChange={setIsLightOn}
+              onValueChange={handleLightToggle}
               trackColor={{ false: "#D1D5DB", true: "#DBEAFE" }}
               thumbColor={isLightOn ? "#3B82F6" : "#9CA3AF"}
             />

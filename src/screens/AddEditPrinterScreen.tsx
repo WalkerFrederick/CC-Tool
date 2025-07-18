@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import * as yup from 'yup';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 
 interface FormData {
   printerName: string;
@@ -33,6 +34,7 @@ const validationSchema = yup.object().shape({
 
 export const AddEditPrinterScreen = () => {
   const navigation = useNavigation();
+  const { addPrinter } = usePrinterConnections();
   const [formData, setFormData] = useState<FormData>({
     printerName: '',
     ipAddress: '',
@@ -49,12 +51,12 @@ export const AddEditPrinterScreen = () => {
   };
 
   const handleSubmit = async () => {
+    console.log('handleSubmit', formData);
     setIsSubmitting(true);
     try {
       await validationSchema.validate(formData, { abortEarly: false });
-      // Form is valid, proceed with submission
-      Alert.alert('Success', 'Printer saved successfully!');
-      console.log('Form data:', formData);
+      addPrinter(formData.printerName, formData.ipAddress);
+      navigation.goBack();
     } catch (validationErrors: any) {
       const newErrors: FormErrors = {};
       validationErrors.inner.forEach((error: any) => {

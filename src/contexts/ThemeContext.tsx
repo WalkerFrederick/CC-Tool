@@ -24,11 +24,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         const savedTheme = (await AsyncStorage.getItem('theme')) as Theme | null;
         if (savedTheme) {
           _setTheme(savedTheme);
-          if (savedTheme === 'system') {
-            setColorScheme(Appearance.getColorScheme() ?? 'light');
-          } else {
-            setColorScheme(savedTheme);
-          }
         }
       } catch (e) {
         console.error('Failed to load theme from storage', e);
@@ -36,25 +31,20 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     getTheme();
+  }, []);
 
-    const subscription = Appearance.addChangeListener(({ colorScheme: newColorScheme }) => {
-      if (theme === 'system') {
-        setColorScheme(newColorScheme ?? 'light');
-      }
-    });
-
-    return () => subscription.remove();
+  useEffect(() => {
+    if (theme === 'system') {
+      setColorScheme(Appearance.getColorScheme() ?? 'light');
+    } else {
+      setColorScheme(theme);
+    }
   }, [theme, setColorScheme]);
 
   const setTheme = async (newTheme: Theme) => {
     try {
       await AsyncStorage.setItem('theme', newTheme);
       _setTheme(newTheme);
-      if (newTheme === 'system') {
-        setColorScheme(Appearance.getColorScheme() ?? 'light');
-      } else {
-        setColorScheme(newTheme);
-      }
     } catch (e) {
       console.error('Failed to save theme to storage', e);
     }
