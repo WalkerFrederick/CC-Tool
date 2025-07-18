@@ -106,7 +106,12 @@ export const AddEditPrinterScreen = () => {
 
             {/* IP Address Input */}
             <View className="mb-6">
-              <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2 text-lg">IP Address</Text>
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-gray-700 dark:text-gray-200 font-medium text-lg">IP Address</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('WhereIsIp' as never)}>
+                  <Text className="text-blue-500 text-sm">Where is this?</Text>
+                </TouchableOpacity>
+              </View>
               <TextInput
                 className={`border rounded-lg px-4 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 ${
                   errors.ipAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'

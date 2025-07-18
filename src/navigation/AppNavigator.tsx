@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { HomeScreen, SettingsScreen } from '../screens';
 import { PrinterDetailsScreen } from '../screens/PrinterDetailsScreen';
 import { AddEditPrinterScreen } from '../screens/AddEditPrinterScreen';
+import WhereIsIpScreen from '../screens/WhereIsIpScreen';
 import PrinterIcon from '../components/icons/PrinterIcon';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -21,6 +22,7 @@ const PrintersStackNavigator = () => (
     <Stack.Screen name="Home" component={HomeScreen} />
     <Stack.Screen name="PrinterDetails" component={PrinterDetailsScreen} />
     <Stack.Screen name="AddEditPrinter" component={AddEditPrinterScreen} />
+    <Stack.Screen name="WhereIsIp" component={WhereIsIpScreen} />
   </Stack.Navigator>
 );
 
