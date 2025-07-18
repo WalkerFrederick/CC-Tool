@@ -1,6 +1,7 @@
 {
   "name": "cc-tool",
   "version": "1.0.0",
+  "license": "MIT",
   "scripts": {
     "android": "expo start --android --dev-client",
     "ios": "expo start --ios --dev-client",
