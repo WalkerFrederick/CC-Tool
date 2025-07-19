@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import * as yup from 'yup';
@@ -69,62 +75,83 @@ export const AddEditPrinterScreen = () => {
   };
 
   return (
-    <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
+    <SafeAreaView
+      edges={['top']}
+      className="flex-1 bg-slate-100 dark:bg-gray-900"
+    >
       <Header title="Add/Edit Printer" subtitle="Add or edit a printer" />
       <ScrollView className="flex-1 bg-slate-200 dark:bg-gray-800">
         <View className="p-2">
           {/* Back Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-row items-center mb-2 p-2"
             onPress={() => navigation.goBack()}
           >
             <Ionicons name="arrow-back" size={24} color="#374151" />
-            <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">BACK</Text>
+            <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">
+              BACK
+            </Text>
           </TouchableOpacity>
-          
+
           {/* Form Container */}
           <View className="bg-white dark:bg-gray-900 rounded-lg p-6 border border-gray-300 dark:border-gray-700">
-            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">Printer Information</Text>
-            
+            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-6">
+              Printer Information
+            </Text>
+
             {/* Printer Name Input */}
             <View className="mb-4">
-              <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2 text-lg">Printer Name</Text>
+              <Text className="text-gray-700 dark:text-gray-200 font-medium mb-2 text-lg">
+                Printer Name
+              </Text>
               <TextInput
                 className={`border rounded-lg px-4 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 ${
-                  errors.printerName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  errors.printerName
+                    ? 'border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="Enter printer name"
                 placeholderTextColor="#9CA3AF"
                 value={formData.printerName}
-                onChangeText={(value) => handleInputChange('printerName', value)}
+                onChangeText={value => handleInputChange('printerName', value)}
                 autoCapitalize="words"
               />
               {errors.printerName && (
-                <Text className="text-red-500 text-sm mt-1">{errors.printerName}</Text>
+                <Text className="text-red-500 text-sm mt-1">
+                  {errors.printerName}
+                </Text>
               )}
             </View>
 
             {/* IP Address Input */}
             <View className="mb-6">
               <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-gray-700 dark:text-gray-200 font-medium text-lg">IP Address</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('WhereIsIp' as never)}>
+                <Text className="text-gray-700 dark:text-gray-200 font-medium text-lg">
+                  IP Address
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('WhereIsIp' as never)}
+                >
                   <Text className="text-blue-500 text-sm">Where is this?</Text>
                 </TouchableOpacity>
               </View>
               <TextInput
                 className={`border rounded-lg px-4 py-4 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 ${
-                  errors.ipAddress ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  errors.ipAddress
+                    ? 'border-red-500'
+                    : 'border-gray-300 dark:border-gray-600'
                 }`}
                 placeholder="192.168.1.100"
                 placeholderTextColor="#9CA3AF"
                 value={formData.ipAddress}
-                onChangeText={(value) => handleInputChange('ipAddress', value)}
+                onChangeText={value => handleInputChange('ipAddress', value)}
                 keyboardType="numeric"
                 autoCapitalize="none"
               />
               {errors.ipAddress && (
-                <Text className="text-red-500 text-sm mt-1">{errors.ipAddress}</Text>
+                <Text className="text-red-500 text-sm mt-1">
+                  {errors.ipAddress}
+                </Text>
               )}
             </View>
 
@@ -145,4 +172,4 @@ export const AddEditPrinterScreen = () => {
       </ScrollView>
     </SafeAreaView>
   );
-}; 
+};

@@ -28,7 +28,12 @@ export interface ThemeContextType {
 }
 
 // Printer types
-export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error' | 'timeout';
+export type ConnectionStatus =
+  | 'connected'
+  | 'connecting'
+  | 'disconnected'
+  | 'error'
+  | 'timeout';
 
 export interface CurrentFanSpeed {
   ModelFan: number;
@@ -53,7 +58,14 @@ export interface PrintInfo {
   Progress: number;
 }
 
-export type PrintStatus = 'idle' | 'completed' | 'preparing' | 'printing' | 'paused' | 'stopped' | 'unknown';
+export type PrintStatus =
+  | 'idle'
+  | 'completed'
+  | 'preparing'
+  | 'printing'
+  | 'paused'
+  | 'stopped'
+  | 'unknown';
 
 export const getPrintStatus = (status: number): PrintStatus => {
   switch (status) {

@@ -34,9 +34,21 @@ export const AppNavigator = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           if (route.name === 'Printers') {
-            return <PrinterIcon variant={focused ? 'filled' : 'outline'} size={size} color={color} />;
+            return (
+              <PrinterIcon
+                variant={focused ? 'filled' : 'outline'}
+                size={size}
+                color={color}
+              />
+            );
           } else if (route.name === 'Settings') {
-            return <Ionicons name={focused ? 'settings' : 'settings-outline'} size={size} color={color} />;
+            return (
+              <Ionicons
+                name={focused ? 'settings' : 'settings-outline'}
+                size={size}
+                color={color}
+              />
+            );
           } else {
             return <Ionicons name="help-outline" size={size} color={color} />;
           }

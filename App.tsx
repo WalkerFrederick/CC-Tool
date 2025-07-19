@@ -6,14 +6,18 @@ import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { PrinterConnectionsProvider } from './src/contexts/PrinterConnectionsContext';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+} from '@react-navigation/native';
 import * as NavigationBar from 'expo-navigation-bar';
 
 import './global.css';
 
 function AppContent() {
   const { colorScheme } = useTheme();
-  
+
   const MyDarkTheme = {
     ...DarkTheme,
     colors: {
@@ -40,12 +44,16 @@ function AppContent() {
     if (Platform.OS === 'android') {
       const barColor = colorScheme === 'dark' ? '#111827' : '#f1f5f9';
       NavigationBar.setBackgroundColorAsync(barColor);
-      NavigationBar.setButtonStyleAsync(colorScheme === 'dark' ? 'light' : 'dark');
+      NavigationBar.setButtonStyleAsync(
+        colorScheme === 'dark' ? 'light' : 'dark'
+      );
     }
   }, [colorScheme]);
 
   return (
-    <NavigationContainer theme={colorScheme === 'dark' ? MyDarkTheme : MyLightTheme}>
+    <NavigationContainer
+      theme={colorScheme === 'dark' ? MyDarkTheme : MyLightTheme}
+    >
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <AppNavigator />
     </NavigationContainer>

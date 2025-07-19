@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useColorScheme } from 'nativewind';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,7 +20,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const getTheme = async () => {
       try {
-        const savedTheme = (await AsyncStorage.getItem('theme')) as Theme | null;
+        const savedTheme = (await AsyncStorage.getItem(
+          'theme'
+        )) as Theme | null;
         if (savedTheme) {
           _setTheme(savedTheme);
         }
@@ -51,7 +52,9 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, colorScheme: colorScheme as 'light' | 'dark' }}>
+    <ThemeContext.Provider
+      value={{ theme, setTheme, colorScheme: colorScheme as 'light' | 'dark' }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -63,4 +66,4 @@ export const useTheme = () => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-}; 
+};

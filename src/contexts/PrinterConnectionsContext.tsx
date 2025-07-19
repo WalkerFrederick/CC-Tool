@@ -1,4 +1,11 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode, useRef } from 'react';
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  ReactNode,
+  useRef,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, AppStateStatus, Alert } from 'react-native';
 import { Printer, ConnectionStatus, PrinterStatus } from '../types';
@@ -11,7 +18,9 @@ interface PrinterConnectionsContextType {
   sendCommand: (printerId: string, command: any) => void;
 }
 
-const PrinterConnectionsContext = createContext<PrinterConnectionsContextType | undefined>(undefined);
+const PrinterConnectionsContext = createContext<
+  PrinterConnectionsContextType | undefined
+>(undefined);
 
 // A simple ID generator to avoid external dependencies.
 const generateId = () => {
@@ -24,37 +33,51 @@ const STATUS_UPDATE_INTERVAL = 31000; // 30 seconds
 // Helper function to get readable command names
 const getCommandName = (cmdCode: number): string => {
   switch (cmdCode) {
-    case 129: return 'Pause Print';
-    case 130: return 'Stop Print';
-    case 131: return 'Resume Print';
-    case 386: return 'Enable Video';
-    case 403: return 'Toggle Light';
-    default: return `Command ${cmdCode}`;
+    case 129:
+      return 'Pause Print';
+    case 130:
+      return 'Stop Print';
+    case 131:
+      return 'Resume Print';
+    case 386:
+      return 'Enable Video';
+    case 403:
+      return 'Toggle Light';
+    default:
+      return `Command ${cmdCode}`;
   }
 };
 
-export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }) => {
+export const PrinterConnectionsProvider = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
   const [printers, setPrinters] = useState<Printer[]>([]);
   const webSocketsRef = useRef<{ [key: string]: WebSocket }>({});
   const statusTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
   const printersRef = useRef<Printer[]>([]);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
-  const pendingCommandsRef = useRef<{ [key: string]: { command: string; timestamp: number } }>({});
+  const pendingCommandsRef = useRef<{
+    [key: string]: { command: string; timestamp: number };
+  }>({});
 
   useEffect(() => {
     const loadPrinters = async () => {
       try {
         const savedPrintersJSON = await AsyncStorage.getItem('printers');
-        console.log('savedPrintersJSON', savedPrintersJSON)
+        console.log('savedPrintersJSON', savedPrintersJSON);
         if (savedPrintersJSON) {
           const savedPrinters = JSON.parse(savedPrintersJSON);
-          const loadedPrinters = savedPrinters.map((p: Omit<Printer, 'connectionStatus'>) => ({
-            ...p,
-            connectionStatus: 'disconnected' as ConnectionStatus,
-          }));
+          const loadedPrinters = savedPrinters.map(
+            (p: Omit<Printer, 'connectionStatus'>) => ({
+              ...p,
+              connectionStatus: 'disconnected' as ConnectionStatus,
+            })
+          );
           setPrinters(loadedPrinters);
           printersRef.current = loadedPrinters;
-          console.log('loadedPrinters', loadedPrinters)
+          console.log('loadedPrinters', loadedPrinters);
           loadedPrinters.forEach((p: Printer) => connectToPrinter(p));
         }
       } catch (e) {
@@ -65,28 +88,43 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     loadPrinters();
 
     return () => {
-      Object.values(webSocketsRef.current).forEach((ws) => ws.close());
-      Object.values(statusTimersRef.current).forEach(timer => clearInterval(timer));
+      Object.values(webSocketsRef.current).forEach(ws => ws.close());
+      Object.values(statusTimersRef.current).forEach(timer =>
+        clearInterval(timer)
+      );
     };
   }, []);
 
   // Handle app state changes (background/foreground)
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      console.log('App state changed from', appStateRef.current, 'to', nextAppState);
-      
-      if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        console.log('App came to foreground, reconnecting disconnected printers...');
+      console.log(
+        'App state changed from',
+        appStateRef.current,
+        'to',
+        nextAppState
+      );
+
+      if (
+        appStateRef.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        console.log(
+          'App came to foreground, reconnecting disconnected printers...'
+        );
         // Small delay to ensure app is fully active
         setTimeout(() => {
           reconnectDisconnectedPrinters();
         }, 1000);
       }
-      
+
       appStateRef.current = nextAppState;
     };
 
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
 
     return () => {
       subscription?.remove();
@@ -96,34 +134,41 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   useEffect(() => {
     const savePrinters = async () => {
       try {
-        const printersToSave = printers.map(({ id, printerName, ipAddress }) => ({
-          id,
-          printerName,
-          ipAddress,
-        }));
+        const printersToSave = printers.map(
+          ({ id, printerName, ipAddress }) => ({
+            id,
+            printerName,
+            ipAddress,
+          })
+        );
         await AsyncStorage.setItem('printers', JSON.stringify(printersToSave));
       } catch (e) {
         console.error('Failed to save printers to storage', e);
       }
     };
-    
+
     // Only save if printers state has been initialized from storage
     if (printers.length > 0) {
       savePrinters();
     }
   }, [printers]);
 
-  const updatePrinterStatus = (id: string, connectionStatus: ConnectionStatus) => {
-    setPrinters((prevPrinters) => {
-      const updatedPrinters = prevPrinters.map((p) => (p.id === id ? { ...p, connectionStatus } : p));
+  const updatePrinterStatus = (
+    id: string,
+    connectionStatus: ConnectionStatus
+  ) => {
+    setPrinters(prevPrinters => {
+      const updatedPrinters = prevPrinters.map(p =>
+        p.id === id ? { ...p, connectionStatus } : p
+      );
       printersRef.current = updatedPrinters;
       return updatedPrinters;
     });
   };
 
   const updatePrinterData = (id: string, status: PrinterStatus) => {
-    setPrinters((prevPrinters) => {
-      const updatedPrinters = prevPrinters.map((p) => 
+    setPrinters(prevPrinters => {
+      const updatedPrinters = prevPrinters.map(p =>
         p.id === id ? { ...p, status, lastUpdate: Date.now() } : p
       );
       printersRef.current = updatedPrinters;
@@ -132,8 +177,8 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   };
 
   const updatePrinterVideoUrl = (id: string, videoUrl: string) => {
-    setPrinters((prevPrinters) => {
-      const updatedPrinters = prevPrinters.map((p) => 
+    setPrinters(prevPrinters => {
+      const updatedPrinters = prevPrinters.map(p =>
         p.id === id ? { ...p, videoUrl } : p
       );
       printersRef.current = updatedPrinters;
@@ -145,13 +190,15 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     console.log('Sending status request to printer', printer.printerName);
     const websocket = ws || webSocketsRef.current[printer.id];
     console.log('websocket', websocket);
-    
+
     if (!websocket) {
-      console.log(`No WebSocket found for ${printer.printerName}, stopping timer`);
+      console.log(
+        `No WebSocket found for ${printer.printerName}, stopping timer`
+      );
       stopStatusTimer(printer.id);
       return;
     }
-    
+
     if (websocket.readyState === WebSocket.OPEN) {
       const statusRequest = {
         Id: `${printer.printerName}-id-${Date.now()}`,
@@ -167,9 +214,16 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       console.log(`Sending status request to ${printer.printerName}`);
       websocket.send(JSON.stringify(statusRequest));
     } else {
-      console.log(`WebSocket not open for ${printer.printerName}, state: ${websocket.readyState}`);
-      if (websocket.readyState === WebSocket.CLOSED || websocket.readyState === WebSocket.CLOSING) {
-        console.log(`WebSocket closed for ${printer.printerName}, stopping timer`);
+      console.log(
+        `WebSocket not open for ${printer.printerName}, state: ${websocket.readyState}`
+      );
+      if (
+        websocket.readyState === WebSocket.CLOSED ||
+        websocket.readyState === WebSocket.CLOSING
+      ) {
+        console.log(
+          `WebSocket closed for ${printer.printerName}, stopping timer`
+        );
         stopStatusTimer(printer.id);
         updatePrinterStatus(printer.id, 'disconnected');
       }
@@ -177,8 +231,10 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   };
 
   const startStatusTimer = (printer: Printer) => {
-    console.log(`Starting status timer for ${printer.printerName} (${printer.id})`);
-    
+    console.log(
+      `Starting status timer for ${printer.printerName} (${printer.id})`
+    );
+
     // Clear any existing timer for this printer
     if (statusTimersRef.current[printer.id]) {
       console.log(`Clearing existing timer for ${printer.id}`);
@@ -190,11 +246,13 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       console.log(`Timer tick for ${printer.printerName}`);
       // Check if printer is still connected before sending - use ref to get current state
       const currentPrinter = printersRef.current.find(p => p.id === printer.id);
-      console.log('Current printers from ref:', printersRef.current)
+      console.log('Current printers from ref:', printersRef.current);
       if (currentPrinter && currentPrinter.connectionStatus === 'connected') {
         sendStatusRequest(printer);
       } else {
-        console.log(`Printer ${printer.printerName} is not connected, stopping timer`);
+        console.log(
+          `Printer ${printer.printerName} is not connected, stopping timer`
+        );
         stopStatusTimer(printer.id);
       }
     }, STATUS_UPDATE_INTERVAL);
@@ -207,12 +265,15 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
   const stopStatusTimer = (printerId: string) => {
     console.log(`Attempting to stop status timer for printer ${printerId}`);
     console.log(`Current status timers:`, Object.keys(statusTimersRef.current));
-    
+
     if (statusTimersRef.current[printerId]) {
       console.log(`Found timer for ${printerId}, clearing it`);
       clearInterval(statusTimersRef.current[printerId]);
       delete statusTimersRef.current[printerId];
-      console.log(`Updated timers after removal:`, Object.keys(statusTimersRef.current));
+      console.log(
+        `Updated timers after removal:`,
+        Object.keys(statusTimersRef.current)
+      );
     } else {
       console.log(`No timer found for ${printerId}`);
     }
@@ -237,78 +298,93 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       clearTimeout(timeout);
       console.log(`Connected to printer: ${printer.printerName}`);
       updatePrinterStatus(printer.id, 'connected');
-      
+
       // Set initial lastUpdate when connected
-      setPrinters((prevPrinters) => {
-        const updatedPrinters = prevPrinters.map((p) => 
+      setPrinters(prevPrinters => {
+        const updatedPrinters = prevPrinters.map(p =>
           p.id === printer.id ? { ...p, lastUpdate: Date.now() } : p
         );
         printersRef.current = updatedPrinters;
         return updatedPrinters;
       });
-      
+
       // Send enable command
       const enableCommand = {
-        "Id": "",
-        "Data": {
-          "Cmd": 386,
-          "Data": {
-            "Enable": 1
+        Id: '',
+        Data: {
+          Cmd: 386,
+          Data: {
+            Enable: 1,
           },
-          "RequestID": "ENABLE_VIDEO",
-          "MainboardID": "",
-          "TimeStamp": Date.now(),
-          "From": 1
-        }
+          RequestID: 'ENABLE_VIDEO',
+          MainboardID: '',
+          TimeStamp: Date.now(),
+          From: 1,
+        },
       };
-      console.log(`Sending enable command to ${printer.printerName}:`, enableCommand);
+      console.log(
+        `Sending enable command to ${printer.printerName}:`,
+        enableCommand
+      );
       ws.send(JSON.stringify(enableCommand));
-      
+
       // Send initial status request using the ws instance directly
       sendStatusRequest(printer, ws);
-      
+
       // Start periodic status updates
       startStatusTimer(printer);
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = event => {
       try {
         const data = JSON.parse(event.data);
 
-        console.log('data', data)
-        
+        console.log('data', data);
+
         if (data.Status) {
-          console.log(`Status update from ${printer.printerName}:`, data.Status);
+          console.log(
+            `Status update from ${printer.printerName}:`,
+            data.Status
+          );
           updatePrinterData(printer.id, data.Status);
         }
-        
-                  // Check for ACK response
-          if (data.Data && data.Data.Data && data.Data.Data.Ack === 0 && data.Data.RequestID !== 'STATUS_REQUEST') {
-            if (data.Data.Data.VideoUrl) {
-              console.log('VideoUrl', data.Data.Data.VideoUrl)
-              updatePrinterVideoUrl(printer.id, data.Data.Data.VideoUrl);
-            }
-            console.log(`ACK received from ${printer.printerName}`);
-            // Send status request using the ws instance directly
-            sendStatusRequest(printer, ws);
+
+        // Check for ACK response
+        if (
+          data.Data &&
+          data.Data.Data &&
+          data.Data.Data.Ack === 0 &&
+          data.Data.RequestID !== 'STATUS_REQUEST'
+        ) {
+          if (data.Data.Data.VideoUrl) {
+            console.log('VideoUrl', data.Data.Data.VideoUrl);
+            updatePrinterVideoUrl(printer.id, data.Data.Data.VideoUrl);
           }
-          if (data.Data && data.Data.Data && data.Data.Data.Ack > 0) {
-            console.log(`ACK non zero received from ${printer.printerName}`);
-            const requestId = data.Data.RequestID;
-            const commandName = pendingCommandsRef.current[requestId]?.command || 'Unknown command';
-            
-            // Remove from pending commands
-            delete pendingCommandsRef.current[requestId];
-            
-            // Show alert to user
-            Alert.alert(
-              'Command Rejected',
-              `The command "${commandName}" was not accepted by ${printer.printerName}. Please Try again. Some controls are not available when printing.`,
-              [{ text: 'OK' }]
-            );
-          }
+          console.log(`ACK received from ${printer.printerName}`);
+          // Send status request using the ws instance directly
+          sendStatusRequest(printer, ws);
+        }
+        if (data.Data && data.Data.Data && data.Data.Data.Ack > 0) {
+          console.log(`ACK non zero received from ${printer.printerName}`);
+          const requestId = data.Data.RequestID;
+          const commandName =
+            pendingCommandsRef.current[requestId]?.command || 'Unknown command';
+
+          // Remove from pending commands
+          delete pendingCommandsRef.current[requestId];
+
+          // Show alert to user
+          Alert.alert(
+            'Command Rejected',
+            `The command "${commandName}" was not accepted by ${printer.printerName}. Please Try again. Some controls are not available when printing.`,
+            [{ text: 'OK' }]
+          );
+        }
       } catch (error) {
-        console.log(`Error parsing message from ${printer.printerName}:`, error);
+        console.log(
+          `Error parsing message from ${printer.printerName}:`,
+          error
+        );
         console.log(`Raw message:`, event.data);
       }
     };
@@ -316,7 +392,10 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     ws.onerror = (error: unknown) => {
       clearTimeout(timeout);
       console.error(`error for ${printer.printerName}:`, error);
-      if (error && (error as Error).message === "Software caused connection abort") {
+      if (
+        error &&
+        (error as Error).message === 'Software caused connection abort'
+      ) {
         updatePrinterStatus(printer.id, 'disconnected');
       } else {
         updatePrinterStatus(printer.id, 'error');
@@ -324,19 +403,23 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       stopStatusTimer(printer.id);
     };
 
-    ws.onclose = (event) => {
+    ws.onclose = event => {
       clearTimeout(timeout);
-      console.log(`Disconnected from printer: ${printer.printerName}, code: ${event.code}, reason: ${event.reason}`);
+      console.log(
+        `Disconnected from printer: ${printer.printerName}, code: ${event.code}, reason: ${event.reason}`
+      );
       stopStatusTimer(printer.id);
-      setPrinters((prev) => {
-        const printerToUpdate = prev.find((p) => p.id === printer.id);
+      setPrinters(prev => {
+        const printerToUpdate = prev.find(p => p.id === printer.id);
         if (
           printerToUpdate &&
           (printerToUpdate.connectionStatus === 'connected' ||
             printerToUpdate.connectionStatus === 'connecting')
         ) {
-          const updatedPrinters = prev.map((p) =>
-            p.id === printer.id ? { ...p, connectionStatus: 'disconnected' as ConnectionStatus } : p
+          const updatedPrinters = prev.map(p =>
+            p.id === printer.id
+              ? { ...p, connectionStatus: 'disconnected' as ConnectionStatus }
+              : p
           );
           printersRef.current = updatedPrinters;
           return updatedPrinters;
@@ -356,11 +439,11 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       connectionStatus: 'connecting',
     };
 
-    setPrinters((prevPrinters) => {
-      const existingPrinter = prevPrinters.find((p) => p.ipAddress === ipAddress);
+    setPrinters(prevPrinters => {
+      const existingPrinter = prevPrinters.find(p => p.ipAddress === ipAddress);
       if (existingPrinter) {
         // Maybe alert the user that the printer already exists
-        console.log('printer already exists', existingPrinter)
+        console.log('printer already exists', existingPrinter);
         return prevPrinters;
       }
       const updatedPrinters = [...prevPrinters, newPrinter];
@@ -378,14 +461,14 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
       delete webSocketsRef.current[id];
     }
     stopStatusTimer(id);
-    console.log('remove printer', id)
-    setPrinters((prevPrinters) => {
-      const updatedPrinters = prevPrinters.filter((p) => p.id !== id);
+    console.log('remove printer', id);
+    setPrinters(prevPrinters => {
+      const updatedPrinters = prevPrinters.filter(p => p.id !== id);
       printersRef.current = updatedPrinters;
       return updatedPrinters;
     });
     // Also remove from AsyncStorage
-    AsyncStorage.getItem('printers').then((printersJSON) => {
+    AsyncStorage.getItem('printers').then(printersJSON => {
       if (printersJSON) {
         const printers = JSON.parse(printersJSON);
         const filteredPrinters = printers.filter((p: Printer) => p.id !== id);
@@ -398,16 +481,16 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     const ws = webSocketsRef.current[printerId];
     if (ws && ws.readyState === WebSocket.OPEN) {
       console.log(`Sending command to printer ${printerId}:`, command);
-      
+
       // Track the command for ACK response
       const requestId = command.Data?.RequestID;
       if (requestId) {
         const commandName = getCommandName(command.Data?.Cmd);
         pendingCommandsRef.current[requestId] = {
           command: commandName,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        
+
         // Clean up old pending commands (older than 30 seconds)
         const now = Date.now();
         Object.keys(pendingCommandsRef.current).forEach(key => {
@@ -416,10 +499,12 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
           }
         });
       }
-      
+
       ws.send(JSON.stringify(command));
     } else {
-      console.error(`Cannot send command: WebSocket not connected for printer ${printerId}`);
+      console.error(
+        `Cannot send command: WebSocket not connected for printer ${printerId}`
+      );
     }
   };
 
@@ -430,18 +515,26 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
 
   const reconnectDisconnectedPrinters = () => {
     console.log('Reconnecting only disconnected printers...');
-    console.log('Current printer statuses:', printersRef.current.map(p => `${p.printerName}: ${p.connectionStatus}`));
-    
-    const disconnectedPrinters = printersRef.current.filter(p => 
-      p.connectionStatus === 'disconnected' || 
-      p.connectionStatus === 'error' || 
-      p.connectionStatus === 'timeout'
+    console.log(
+      'Current printer statuses:',
+      printersRef.current.map(p => `${p.printerName}: ${p.connectionStatus}`)
     );
-    
+
+    const disconnectedPrinters = printersRef.current.filter(
+      p =>
+        p.connectionStatus === 'disconnected' ||
+        p.connectionStatus === 'error' ||
+        p.connectionStatus === 'timeout'
+    );
+
     if (disconnectedPrinters.length > 0) {
-      console.log(`Found ${disconnectedPrinters.length} disconnected printers, reconnecting...`);
+      console.log(
+        `Found ${disconnectedPrinters.length} disconnected printers, reconnecting...`
+      );
       disconnectedPrinters.forEach(printer => {
-        console.log(`Attempting to reconnect to ${printer.printerName} (${printer.connectionStatus})`);
+        console.log(
+          `Attempting to reconnect to ${printer.printerName} (${printer.connectionStatus})`
+        );
         connectToPrinter(printer);
       });
     } else {
@@ -451,7 +544,8 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
 
   return (
     <PrinterConnectionsContext.Provider
-      value={{ printers, addPrinter, removePrinter, reconnectAll, sendCommand }}>
+      value={{ printers, addPrinter, removePrinter, reconnectAll, sendCommand }}
+    >
       {children}
     </PrinterConnectionsContext.Provider>
   );
@@ -460,7 +554,9 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
 export const usePrinterConnections = () => {
   const context = useContext(PrinterConnectionsContext);
   if (context === undefined) {
-    throw new Error('usePrinterConnections must be used within a PrinterConnectionsProvider');
+    throw new Error(
+      'usePrinterConnections must be used within a PrinterConnectionsProvider'
+    );
   }
   return context;
 };

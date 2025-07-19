@@ -2,7 +2,7 @@
   "expo": {
     "name": "CC Tool",
     "slug": "cc-tool",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -34,7 +34,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "dev.allisonf.cctool"
+      "package": "dev.allisonf.cctool",
+      "versionCode": 3
     },
     "developmentClient": {
       "silenceDeploymentWarnings": true

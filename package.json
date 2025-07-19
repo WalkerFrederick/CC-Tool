@@ -9,7 +9,9 @@
     "start": "expo start --dev-client",
     "prebuild": "expo prebuild",
     "lint": "eslint \"**/*.{js,jsx,ts,tsx}\" && prettier -c \"**/*.{js,jsx,ts,tsx,json}\"",
-    "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write"
+    "format": "eslint \"**/*.{js,jsx,ts,tsx}\" --fix && prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
+    "prettier": "prettier \"**/*.{js,jsx,ts,tsx,json}\" --write",
+    "prettier:check": "prettier \"**/*.{js,jsx,ts,tsx,json}\" --check"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
@@ -44,7 +46,7 @@
     "eslint": "^9.25.1",
     "eslint-config-expo": "^9.2.0",
     "eslint-config-prettier": "^10.1.2",
-    "prettier": "^3.2.5",
+    "prettier": "^3.6.2",
     "prettier-plugin-tailwindcss": "^0.5.11",
     "tailwindcss": "^3.4.0",
     "typescript": "~5.8.3"

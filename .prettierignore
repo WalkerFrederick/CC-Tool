@@ -1,0 +1,64 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+android/
+ios/
+build/
+dist/
+*.apk
+*.aab
+*.ipa
+
+# Expo
+.expo/
+.expo-shared/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Temporary folders
+tmp/
+temp/
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Generated files
+*.generated.*
+*.min.js
+*.min.css
+
+# Config files that should maintain their format
+*.json
+*.md 
