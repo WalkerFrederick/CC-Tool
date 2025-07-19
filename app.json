@@ -2,14 +2,23 @@
   "expo": {
     "name": "CC Tool",
     "slug": "cc-tool",
-    "version": "1.0.1",
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "version": "1.0.2",
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "experiments": {
       "tsconfigPaths": true
     },
-    "plugins": [],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +27,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "dev.allisonf.cctool",
@@ -35,7 +46,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "dev.allisonf.cctool",
-      "versionCode": 3
+      "versionCode": 4
     },
     "developmentClient": {
       "silenceDeploymentWarnings": true
