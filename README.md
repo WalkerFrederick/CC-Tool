@@ -2,7 +2,7 @@
 
 Welcome to CC Tool!
 
-![Screenshot 1](screenshots/HEADERjpg)
+![Screenshot 1](screenshots/HEADER.jpg)
 
 ## 📄 License
 
