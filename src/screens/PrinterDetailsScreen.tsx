@@ -1,9 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Switch, RefreshControl, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, RefreshControl, Alert, AppState, AppStateStatus } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { Ionicons } from '@expo/vector-icons';
 import { PrinterCard } from '../components/PrinterCard';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { WebView } from 'react-native-webview';
 import { useRoute } from '@react-navigation/native';
 import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
@@ -15,6 +15,26 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   const printer = printers.find(p => p.id === printerId);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [webViewKey, setWebViewKey] = useState(0);
+  const appState = useRef(AppState.currentState);
+
+  // Handle app state changes to remount WebView when app comes back from background
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to the foreground, remount the WebView
+        console.log('App has come to the foreground, remounting WebView');
+        setWebViewKey(prevKey => prevKey + 1);
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription?.remove();
+    };
+  }, []);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -185,6 +205,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
           <View className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden" style={{ aspectRatio:16/9}}>
             {printer.videoUrl ? (
               <WebView
+                key={webViewKey}
                 source={{ uri: "http://" + printer.videoUrl }}
                 style={{ 
                   flex: 1, 

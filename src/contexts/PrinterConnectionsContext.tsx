@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, AppStateStatus } from 'react-native';
+import { AppState, AppStateStatus, Alert } from 'react-native';
 import { Printer, ConnectionStatus, PrinterStatus } from '../types';
 
 interface PrinterConnectionsContextType {
@@ -21,12 +21,25 @@ const generateId = () => {
 const CONNECTION_TIMEOUT = 3000; // 3 seconds
 const STATUS_UPDATE_INTERVAL = 31000; // 30 seconds
 
+// Helper function to get readable command names
+const getCommandName = (cmdCode: number): string => {
+  switch (cmdCode) {
+    case 129: return 'Pause Print';
+    case 130: return 'Stop Print';
+    case 131: return 'Resume Print';
+    case 386: return 'Enable Video';
+    case 403: return 'Toggle Light';
+    default: return `Command ${cmdCode}`;
+  }
+};
+
 export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }) => {
   const [printers, setPrinters] = useState<Printer[]>([]);
   const webSocketsRef = useRef<{ [key: string]: WebSocket }>({});
   const statusTimersRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
   const printersRef = useRef<Printer[]>([]);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+  const pendingCommandsRef = useRef<{ [key: string]: { command: string; timestamp: number } }>({});
 
   useEffect(() => {
     const loadPrinters = async () => {
@@ -279,6 +292,21 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
             // Send status request using the ws instance directly
             sendStatusRequest(printer, ws);
           }
+          if (data.Data && data.Data.Data && data.Data.Data.Ack > 0) {
+            console.log(`ACK non zero received from ${printer.printerName}`);
+            const requestId = data.Data.RequestID;
+            const commandName = pendingCommandsRef.current[requestId]?.command || 'Unknown command';
+            
+            // Remove from pending commands
+            delete pendingCommandsRef.current[requestId];
+            
+            // Show alert to user
+            Alert.alert(
+              'Command Rejected',
+              `The command "${commandName}" was not accepted by ${printer.printerName}. Please Try again. Some controls are not available when printing.`,
+              [{ text: 'OK' }]
+            );
+          }
       } catch (error) {
         console.log(`Error parsing message from ${printer.printerName}:`, error);
         console.log(`Raw message:`, event.data);
@@ -370,6 +398,25 @@ export const PrinterConnectionsProvider = ({ children }: { children: ReactNode }
     const ws = webSocketsRef.current[printerId];
     if (ws && ws.readyState === WebSocket.OPEN) {
       console.log(`Sending command to printer ${printerId}:`, command);
+      
+      // Track the command for ACK response
+      const requestId = command.Data?.RequestID;
+      if (requestId) {
+        const commandName = getCommandName(command.Data?.Cmd);
+        pendingCommandsRef.current[requestId] = {
+          command: commandName,
+          timestamp: Date.now()
+        };
+        
+        // Clean up old pending commands (older than 30 seconds)
+        const now = Date.now();
+        Object.keys(pendingCommandsRef.current).forEach(key => {
+          if (now - pendingCommandsRef.current[key].timestamp > 30000) {
+            delete pendingCommandsRef.current[key];
+          }
+        });
+      }
+      
       ws.send(JSON.stringify(command));
     } else {
       console.error(`Cannot send command: WebSocket not connected for printer ${printerId}`);

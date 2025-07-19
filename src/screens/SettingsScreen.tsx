@@ -87,6 +87,20 @@ export const SettingsScreen = () => {
     );
   };
 
+  const handleLicensePress = async () => {
+    const url = 'https://github.com/WalkerFrederick/CC-Tool/blob/main/LICENSE';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open license link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open license link');
+    }
+  };
+
   return (
     <SafeAreaView edges={['top']} className="flex-1 bg-slate-100 dark:bg-gray-900">
       <Header title="Settings" subtitle="Manage your preferences" />
@@ -111,6 +125,19 @@ export const SettingsScreen = () => {
                 <Text className="text-gray-500 dark:text-gray-400 mr-2 capitalize">{theme}</Text>
                 <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
               </View>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
+              onPress={handleResetWelcomeFlow}
+            >
+              <View className="flex-row items-center">
+                <Ionicons name="refresh-outline" size={24} color="#6B7280" />
+                <View className="ml-3">
+                  <Text className="font-medium text-gray-800 dark:text-gray-200">Reset Welcome Flow</Text>
+                  <Text className="text-sm text-gray-500 dark:text-gray-400">Show the welcome screen on next launch</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
             </TouchableOpacity>
             <TouchableOpacity 
               className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
@@ -140,18 +167,8 @@ export const SettingsScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4"
-              onPress={handleResetWelcomeFlow}
+              onPress={handleLicensePress}
             >
-              <View className="flex-row items-center">
-                <Ionicons name="refresh-outline" size={24} color="#6B7280" />
-                <View className="ml-3">
-                  <Text className="font-medium text-gray-800 dark:text-gray-200">Reset Welcome Flow</Text>
-                  <Text className="text-sm text-gray-500 dark:text-gray-400">Show the welcome screen on next launch</Text>
-                </View>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
-            </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
               <View className="flex-row items-center">
                 <Ionicons name="document-text" size={24} color="#6B7280" />
                 <View className="ml-3">

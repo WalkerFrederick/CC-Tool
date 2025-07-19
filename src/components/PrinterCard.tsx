@@ -150,8 +150,8 @@ export const PrinterCard = ({
               </View>
             </View>
           )}
-
-          {/* Print Status Section */}
+        {readablePrintStatus === "idle" ?
+         <></> : (
           <View className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800">
             <View className="mb-2 flex-row items-center justify-between">
               <Text className="text-gray-800 dark:text-gray-200">Print Status</Text>
@@ -208,15 +208,14 @@ export const PrinterCard = ({
             ) : (
               <>
                 <Text className="mb-2 font-semibold text-gray-800 dark:text-gray-200">
-                  {readablePrintStatus === 'idle' ? 'Idle' : 
-                   readablePrintStatus === 'completed' ? 'Print Completed' :
+                  {readablePrintStatus === 'completed' ? 'Print Completed' :
                    readablePrintStatus === 'preparing' ? 'Preparing Print' :
                    readablePrintStatus === 'paused' ? 'Print Paused' :
                    readablePrintStatus === 'stopped' ? 'Print Stopped' :
                    readablePrintStatus === 'unknown' ? 'Unknown Status' : 'No active print'}
                 </Text>
                 <Progress.Bar
-                  progress={0}
+                  progress={readablePrintStatus === 'completed' ? 1 : progress/100}
                   width={null}
                   height={8}
                   color="#3B82F6"
@@ -229,7 +228,7 @@ export const PrinterCard = ({
                 </Text>
               </>
             )}
-          </View>
+          </View>)}
         </>
       )}
     </TouchableOpacity>
