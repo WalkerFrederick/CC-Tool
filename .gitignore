@@ -33,11 +33,12 @@ android/
 .env.production.local
 
 # IDE and Editor files
-.vscode/
+.vscode/*
 .idea/
 *.swp
 *.swo
 *~
+!.vscode/*.code-workspace
 
 # OS generated files
 .DS_Store
