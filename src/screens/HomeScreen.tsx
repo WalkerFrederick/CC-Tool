@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -7,19 +7,33 @@ import {
   TouchableOpacity,
   Image,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
 import { PrinterCard } from '../components/PrinterCard';
 import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
+import { Ionicons } from '@expo/vector-icons';
+import { checkLocalNetworkAccess } from '@generac/react-native-local-network-permission';
 
 export const HomeScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
+  const [hasNetworkAccess, setHasNetworkAccess] = useState(true);
   const { printers, reconnectAll, removePrinter } = usePrinterConnections();
+
+  // Check local network access when component mounts
+  const checkNetworkAccess = async () => {
+    const hasAccess = await checkLocalNetworkAccess();
+    setHasNetworkAccess(hasAccess);
+  };
+  useEffect(() => {
+    checkNetworkAccess();
+  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     reconnectAll();
+    checkNetworkAccess();
     // Keep the timeout to give visual feedback on the refresh control
     setTimeout(() => setRefreshing(false), 1000);
   }, [reconnectAll]);
@@ -80,6 +94,9 @@ export const HomeScreen = ({ navigation }: any) => {
           onPress: () => navigation.navigate('AddEditPrinter'),
         }}
       />
+
+      {/* Local Network Access Disclaimer */}
+
       <ScrollView
         className="flex-1 bg-slate-200 dark:bg-gray-800"
         refreshControl={
@@ -88,6 +105,31 @@ export const HomeScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
+        {!hasNetworkAccess && (
+          <View className="mx-2 mt-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <View className="flex-row items-start">
+              <Ionicons
+                name="warning-outline"
+                size={20}
+                color="#D97706"
+                className="mt-0.5"
+              />
+              <View className="ml-2 flex-1">
+                <Text className="text-sm text-yellow-800 dark:text-yellow-200 leading-5">
+                  We need access to local networking to connect to your
+                  printers. Please enable local network access in{' '}
+                  <Text
+                    className="underline font-semibold"
+                    onPress={() => Linking.openSettings()}
+                  >
+                    Settings
+                  </Text>
+                  .
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
         {printers.length === 0 ? (
           // Getting Started Card
           <View className="flex-1 items-center justify-center p-6">

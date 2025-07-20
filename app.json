@@ -32,7 +32,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "dev.allisonf.cctool"
+      "bundleIdentifier": "dev.allisonf.cctool",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app needs to access your local network to connect to your 3D printers.",
+        "NSBonjourServices": ["_bonjour._tcp", "_lnp._tcp."]
+      }    
     },
     "android": {
       "softwareKeyboardLayoutMode": "pan",

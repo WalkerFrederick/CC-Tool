@@ -12,6 +12,7 @@ import * as yup from 'yup';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
+import { checkLocalNetworkPermission } from '../utils/LocalNetworkUtils';
 
 interface FormData {
   printerName: string;
@@ -61,6 +62,14 @@ export const AddEditPrinterScreen = () => {
     setIsSubmitting(true);
     try {
       await validationSchema.validate(formData, { abortEarly: false });
+
+      // Check local network access on iOS before adding printer
+      const hasNetworkAccess = await checkLocalNetworkPermission();
+      if (!hasNetworkAccess) {
+        setIsSubmitting(false);
+        return;
+      }
+
       addPrinter(formData.printerName, formData.ipAddress);
       navigation.goBack();
     } catch (validationErrors: any) {
