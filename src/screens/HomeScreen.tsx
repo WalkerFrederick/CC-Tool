@@ -15,10 +15,12 @@ import { PrinterCard } from '../components/PrinterCard';
 import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
 import { Ionicons } from '@expo/vector-icons';
 import { checkLocalNetworkAccess } from '@generac/react-native-local-network-permission';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const HomeScreen = ({ navigation }: any) => {
   const [refreshing, setRefreshing] = useState(false);
   const [hasNetworkAccess, setHasNetworkAccess] = useState(true);
+  const [showSurvey, setShowSurvey] = useState(true);
   const { printers, reconnectAll, removePrinter } = usePrinterConnections();
 
   // Check local network access when component mounts
@@ -26,8 +28,46 @@ export const HomeScreen = ({ navigation }: any) => {
     const hasAccess = await checkLocalNetworkAccess();
     setHasNetworkAccess(hasAccess);
   };
+
+  const handleSurveyPress = async () => {
+    const url =
+      'https://docs.google.com/forms/d/e/1FAIpQLSfGm5E6OpePT1nECJaQ_uffvfMTWsw4JDxzsDC6T8nNyjVoww/viewform?usp=header';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open survey link');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open survey link');
+    }
+  };
+
+  const handleDismissSurvey = async () => {
+    try {
+      await AsyncStorage.setItem('surveyDismissed', 'true');
+      setShowSurvey(false);
+    } catch (error) {
+      console.error('Failed to save survey dismissal state:', error);
+      // Still hide the survey even if saving fails
+      setShowSurvey(false);
+    }
+  };
   useEffect(() => {
+    const loadSurveyState = async () => {
+      try {
+        const surveyDismissed = await AsyncStorage.getItem('surveyDismissed');
+        if (surveyDismissed === 'true') {
+          setShowSurvey(false);
+        }
+      } catch (error) {
+        console.error('Failed to load survey state:', error);
+      }
+    };
+
     checkNetworkAccess();
+    loadSurveyState();
   }, []);
 
   const onRefresh = useCallback(() => {
@@ -105,7 +145,7 @@ export const HomeScreen = ({ navigation }: any) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexGrow: 1 }}
       >
-        {!hasNetworkAccess && (
+        {printers.length > 0 && !hasNetworkAccess && (
           <View className="mx-2 mt-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <View className="flex-row items-start">
               <Ionicons
@@ -128,6 +168,44 @@ export const HomeScreen = ({ navigation }: any) => {
                 </Text>
               </View>
             </View>
+          </View>
+        )}
+
+        {/* Feedback Survey Card */}
+        {printers.length > 0 && showSurvey && (
+          <View className="mx-2 mt-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <View className="flex-row items-start justify-between">
+              <View className="flex-row items-start flex-1">
+                <Ionicons
+                  name="chatbubble-outline"
+                  size={20}
+                  color="#2563EB"
+                  className="mt-0.5"
+                />
+                <View className="ml-2 flex-1">
+                  <Text className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                    CC Tool Feedback Survey
+                  </Text>
+                  <Text className="text-sm text-blue-700 dark:text-blue-300 leading-5">
+                    Help improve CC Tool by sharing your feedback!
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={handleDismissSurvey}
+                className="ml-2 p-1"
+              >
+                <Ionicons name="close" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              onPress={handleSurveyPress}
+              className="mt-6 bg-blue-500 rounded-lg py-3 px-4"
+            >
+              <Text className="text-white text-2xl text-center font-medium">
+                Take Survey
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
         {printers.length === 0 ? (
