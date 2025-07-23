@@ -12,7 +12,7 @@
         }
       ]
     ],
-    "version": "1.0.3",
+    "version": "1.0.4",
     "web": {
       "favicon": "./assets/favicon.png"
     },
@@ -45,7 +45,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "dev.allisonf.cctool",
-      "versionCode": 4
+      "versionCode": 7
     },
     "developmentClient": {
       "silenceDeploymentWarnings": true

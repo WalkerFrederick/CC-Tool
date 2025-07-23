@@ -30,13 +30,7 @@ const validationSchema = yup.object().shape({
     .required('Printer name is required')
     .min(2, 'Printer name must be at least 2 characters')
     .max(50, 'Printer name must be less than 50 characters'),
-  ipAddress: yup
-    .string()
-    .required('IP address is required')
-    .matches(
-      /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
-      'Please enter a valid IP address'
-    ),
+  ipAddress: yup.string().required('IP address is required'),
 });
 
 export const AddEditPrinterScreen = () => {
@@ -136,7 +130,7 @@ export const AddEditPrinterScreen = () => {
             <View className="mb-6">
               <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-gray-700 dark:text-gray-200 font-medium text-lg">
-                  IP Address
+                  IP Address or Hostname
                 </Text>
                 <TouchableOpacity
                   onPress={() => navigation.navigate('WhereIsIp' as never)}
@@ -154,7 +148,6 @@ export const AddEditPrinterScreen = () => {
                 placeholderTextColor="#9CA3AF"
                 value={formData.ipAddress}
                 onChangeText={value => handleInputChange('ipAddress', value)}
-                keyboardType="numeric"
                 autoCapitalize="none"
               />
               {errors.ipAddress && (
