@@ -224,7 +224,7 @@ export const SettingsScreen = () => {
             </View>
 
             {/* Disclaimer */}
-            <View className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+            <View className="mt-2 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
               <View className="flex-row items-start">
                 <Ionicons
                   name="warning-outline"

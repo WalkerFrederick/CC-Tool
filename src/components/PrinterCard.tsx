@@ -10,20 +10,7 @@ import {
   isResumable,
   isStoppable,
 } from '../types';
-
-const formatTimeAgo = (timestamp: number, currentTime: number): string => {
-  const diff = currentTime - timestamp;
-  const minutes = Math.floor(diff / (1000 * 60));
-  const seconds = Math.floor(diff / 1000);
-
-  if (minutes > 0) {
-    return `${minutes}m ${seconds % 60}s ago`;
-  } else if (seconds > 5) {
-    return `${seconds}s ago`;
-  } else {
-    return 'Just now';
-  }
-};
+import { formatTimeAgo, formatTextMaxEllipsis } from '../utils/FormatUtils';
 
 interface PrinterCardProps {
   printer: Printer;
@@ -99,7 +86,7 @@ export const PrinterCard = ({
         <View className="flex flex-1 justify-between">
           <View className="mt-1 w-full flex-row items-center justify-between">
             <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              {printer.printerName}
+              {formatTextMaxEllipsis(printer.printerName, 20)}
             </Text>
             {onPress && isConnected ? (
               <View className="flex-row items-center">
@@ -120,7 +107,7 @@ export const PrinterCard = ({
           </View>
           <View className="mt-1 w-full flex-row items-center">
             <Text className="text-md flex-1 text-gray-600 dark:text-gray-400">
-              {printer.ipAddress}
+              {formatTextMaxEllipsis(printer.ipAddress, 30)}
             </Text>
             <Text
               className={`text-md ml-2 text-right font-semibold ${statusColors[printer.connectionStatus]}`}
