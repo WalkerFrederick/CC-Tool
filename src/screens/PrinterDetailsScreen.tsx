@@ -48,6 +48,11 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
         // App has come to the foreground, remount the WebView
         console.log('App has come to the foreground, remounting WebView');
         setWebViewKey(prevKey => prevKey + 1);
+
+        // If in full-screen, exit it
+        if (isFullScreen) {
+          setIsFullScreen(false);
+        }
       }
       appState.current = nextAppState;
     };
@@ -60,7 +65,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     return () => {
       subscription?.remove();
     };
-  }, []);
+  }, [isFullScreen]);
 
   // Sync fan states with printer status
   useEffect(() => {
