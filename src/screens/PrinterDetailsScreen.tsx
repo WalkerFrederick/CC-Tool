@@ -8,6 +8,8 @@ import {
   Alert,
   AppState,
   AppStateStatus,
+  Dimensions,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../components/Header';
@@ -32,6 +34,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   const [modelFanState, setModelFanState] = useState(false);
   const [sideFanState, setSideFanState] = useState(false);
   const [isWebViewInteracting, setIsWebViewInteracting] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const webViewInteractionTimeout = useRef<NodeJS.Timeout | null>(null);
   const appState = useRef(AppState.currentState);
 
@@ -97,6 +100,10 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
       setIsWebViewInteracting(false);
       webViewInteractionTimeout.current = null;
     }, 100);
+  };
+
+  const handleToggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen);
   };
 
   const handlePrintControl = () => {
@@ -312,199 +319,260 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
       edges={['top']}
       className="flex-1 bg-slate-100 dark:bg-gray-900"
     >
-      <Header
-        title={formatTextMaxEllipsis(printer.printerName, 26)}
-        subtitle="View printer information"
-      />
-      <ScrollView
-        className="flex-1 bg-slate-200 dark:bg-gray-800"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
-        scrollEnabled={!isWebViewInteracting}
+      {!isFullScreen && (
+        <Header
+          title={formatTextMaxEllipsis(printer.printerName, 26)}
+          subtitle="View printer information"
+        />
+      )}
+      <View style={{ display: isFullScreen ? 'none' : 'flex', flex: 1 }}>
+        <ScrollView
+          className="flex-1 bg-slate-200 dark:bg-gray-800"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={!isWebViewInteracting}
+        >
+          <View className="p-2">
+            {/* Back Button */}
+            <TouchableOpacity
+              className="flex-row items-center mb-2 p-2"
+              onPress={handleBackPress}
+            >
+              <Ionicons name="arrow-back" size={24} color="#374151" />
+              <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">
+                BACK
+              </Text>
+            </TouchableOpacity>
+
+            {/* Video Stream WebView */}
+            <View
+              className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden"
+              style={{ aspectRatio: 16 / 9 }}
+              pointerEvents="box-none"
+            >
+              {printer.videoUrl ? (
+                <>
+                  <WebView
+                    key={webViewKey}
+                    source={{ uri: 'http://' + printer.videoUrl }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: 'transparent',
+                      margin: 0,
+                      padding: 0,
+                    }}
+                    javaScriptEnabled={false}
+                    domStorageEnabled={false}
+                    scalesPageToFit={true}
+                    allowsInlineMediaPlayback={true}
+                    mediaPlaybackRequiresUserAction={false}
+                    scrollEnabled={true}
+                    bounces={false}
+                    showsHorizontalScrollIndicator={false}
+                    showsVerticalScrollIndicator={false}
+                    automaticallyAdjustContentInsets={false}
+                    contentInsetAdjustmentBehavior="never"
+                    onTouchStart={handleWebViewTouchStart}
+                    onTouchEnd={handleWebViewTouchEnd}
+                    onError={syntheticEvent => {
+                      const { nativeEvent } = syntheticEvent;
+                      console.warn('WebView error: ', nativeEvent);
+                    }}
+                    onHttpError={syntheticEvent => {
+                      const { nativeEvent } = syntheticEvent;
+                      console.warn('WebView HTTP error: ', nativeEvent);
+                    }}
+                  />
+                  <TouchableOpacity
+                    onPress={handleToggleFullScreen}
+                    className="absolute top-2 right-2 p-2 bg-black bg-opacity-50 rounded-full"
+                  >
+                    <Ionicons name="expand" size={24} color="white" />
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View className="flex-1 justify-center items-center bg-gray-700">
+                  <Ionicons name="videocam-off" size={48} color="#9CA3AF" />
+                  <Text className="text-gray-400 mt-2 text-center">
+                    Video feed not available
+                  </Text>
+                  <Text className="text-gray-500 mt-1 text-sm text-center">
+                    Waiting for video stream...
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Main Printer Card */}
+            <PrinterCard
+              printer={printer}
+              lastUpdate="3s ago"
+              showPrintControls={true}
+              onPrintControl={handlePrintControl}
+              onStopPrint={handleStopPrint}
+            />
+            {/* Printer Controls Card */}
+            <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mt-2">
+              <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                CONTROLS
+              </Text>
+              {/* Light Toggle */}
+              <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={isLightOn ? 'bulb' : 'bulb-outline'}
+                    size={24}
+                    color={isLightOn ? '#3B82F6' : '#6B7280'}
+                  />
+                  <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                    Printer Light
+                  </Text>
+                </View>
+                <Switch
+                  value={isLightOn}
+                  onValueChange={handleLightToggle}
+                  trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                  thumbColor={isLightOn ? '#3B82F6' : '#9CA3AF'}
+                />
+              </View>
+
+              {/* Chamber Fan Toggle */}
+              <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={isChamberFanOn ? 'settings' : 'settings-outline'}
+                    size={24}
+                    color={isChamberFanOn ? '#3B82F6' : '#6B7280'}
+                  />
+                  <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                    Chamber Fan
+                  </Text>
+                </View>
+                <Switch
+                  value={isChamberFanOn}
+                  onValueChange={isOn => handleFanToggle('chamber', isOn)}
+                  trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                  thumbColor={isChamberFanOn ? '#3B82F6' : '#9CA3AF'}
+                />
+              </View>
+
+              {/* Model Fan Toggle */}
+              <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={isModelFanOn ? 'settings' : 'settings-outline'}
+                    size={24}
+                    color={isModelFanOn ? '#3B82F6' : '#6B7280'}
+                  />
+                  <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                    Model Fan
+                  </Text>
+                </View>
+                <Switch
+                  value={isModelFanOn}
+                  onValueChange={isOn => handleFanToggle('model', isOn)}
+                  trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                  thumbColor={isModelFanOn ? '#3B82F6' : '#9CA3AF'}
+                />
+              </View>
+
+              {/* Side Fan Toggle */}
+              <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name={isSideFanOn ? 'settings' : 'settings-outline'}
+                    size={24}
+                    color={isSideFanOn ? '#3B82F6' : '#6B7280'}
+                  />
+                  <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                    Side Fan
+                  </Text>
+                </View>
+                <Switch
+                  value={isSideFanOn}
+                  onValueChange={isOn => handleFanToggle('side', isOn)}
+                  trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                  thumbColor={isSideFanOn ? '#3B82F6' : '#9CA3AF'}
+                />
+              </View>
+            </View>
+
+            <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mb-4 mt-2">
+              <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                PRINTER SETTINGS
+              </Text>
+              {/* Delete Printer */}
+              <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <View className="flex-row items-center">
+                  <Ionicons name="trash-outline" size={24} color="#EF4444" />
+                  <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                    Unlink Printer
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleDeletePrinter}
+                  className="px-6 py-2 rounded-lg"
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-red-500 font-semibold">UNLINK</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+      {/* Full-screen Modal */}
+      <Modal
+        visible={isFullScreen}
+        transparent={true}
+        onRequestClose={handleToggleFullScreen}
       >
-        <View className="p-2">
-          {/* Back Button */}
-          <TouchableOpacity
-            className="flex-row items-center mb-2 p-2"
-            onPress={handleBackPress}
-          >
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-            <Text className="ml-2 text-gray-700 dark:text-gray-200 font-medium">
-              BACK
-            </Text>
-          </TouchableOpacity>
-
-          {/* Video Stream WebView */}
-          <View
-            className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden"
-            style={{ aspectRatio: 16 / 9 }}
-            pointerEvents="box-none"
-          >
-            {printer.videoUrl ? (
-              <WebView
-                key={webViewKey}
-                source={{ uri: 'http://' + printer.videoUrl }}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'transparent',
-                  margin: 0,
-                  padding: 0,
-                }}
-                javaScriptEnabled={false}
-                domStorageEnabled={false}
-                scalesPageToFit={true}
-                allowsInlineMediaPlayback={true}
-                mediaPlaybackRequiresUserAction={false}
-                scrollEnabled={true}
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                automaticallyAdjustContentInsets={false}
-                contentInsetAdjustmentBehavior="never"
-                onTouchStart={handleWebViewTouchStart}
-                onTouchEnd={handleWebViewTouchEnd}
-                onError={syntheticEvent => {
-                  const { nativeEvent } = syntheticEvent;
-                  console.warn('WebView error: ', nativeEvent);
-                }}
-                onHttpError={syntheticEvent => {
-                  const { nativeEvent } = syntheticEvent;
-                  console.warn('WebView HTTP error: ', nativeEvent);
-                }}
-              />
-            ) : (
-              <View className="flex-1 justify-center items-center bg-gray-700">
-                <Ionicons name="videocam-off" size={48} color="#9CA3AF" />
-                <Text className="text-gray-400 mt-2 text-center">
-                  Video feed not available
-                </Text>
-                <Text className="text-gray-500 mt-1 text-sm text-center">
-                  Waiting for video stream...
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Main Printer Card */}
-          <PrinterCard
-            printer={printer}
-            lastUpdate="3s ago"
-            showPrintControls={true}
-            onPrintControl={handlePrintControl}
-            onStopPrint={handleStopPrint}
+        <SafeAreaView className="flex-1 justify-center items-center bg-black">
+          <WebView
+            source={{
+              html: `
+                    <html>
+                      <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes">
+                        <style>
+                          body, html, img {
+                            margin: 0;
+                            padding: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-color: black;
+                            object-fit: contain;
+                          }
+                        </style>
+                      </head>
+                      <body>
+                        <img src="http://${printer.videoUrl}" />
+                      </body>
+                    </html>
+                  `,
+            }}
+            style={{
+              width: Dimensions.get('window').height,
+              height: Dimensions.get('window').width,
+              transform: [{ rotate: '90deg' }],
+            }}
+            scalesPageToFit={true}
+            scrollEnabled={true}
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
           />
-          {/* Printer Controls Card */}
-          <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mt-2">
-            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              CONTROLS
-            </Text>
-            {/* Light Toggle */}
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name={isLightOn ? 'bulb' : 'bulb-outline'}
-                  size={24}
-                  color={isLightOn ? '#3B82F6' : '#6B7280'}
-                />
-                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                  Printer Light
-                </Text>
-              </View>
-              <Switch
-                value={isLightOn}
-                onValueChange={handleLightToggle}
-                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
-                thumbColor={isLightOn ? '#3B82F6' : '#9CA3AF'}
-              />
-            </View>
-
-            {/* Chamber Fan Toggle */}
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name={isChamberFanOn ? 'settings' : 'settings-outline'}
-                  size={24}
-                  color={isChamberFanOn ? '#3B82F6' : '#6B7280'}
-                />
-                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                  Chamber Fan
-                </Text>
-              </View>
-              <Switch
-                value={isChamberFanOn}
-                onValueChange={isOn => handleFanToggle('chamber', isOn)}
-                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
-                thumbColor={isChamberFanOn ? '#3B82F6' : '#9CA3AF'}
-              />
-            </View>
-
-            {/* Model Fan Toggle */}
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name={isModelFanOn ? 'settings' : 'settings-outline'}
-                  size={24}
-                  color={isModelFanOn ? '#3B82F6' : '#6B7280'}
-                />
-                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                  Model Fan
-                </Text>
-              </View>
-              <Switch
-                value={isModelFanOn}
-                onValueChange={isOn => handleFanToggle('model', isOn)}
-                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
-                thumbColor={isModelFanOn ? '#3B82F6' : '#9CA3AF'}
-              />
-            </View>
-
-            {/* Side Fan Toggle */}
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center">
-                <Ionicons
-                  name={isSideFanOn ? 'settings' : 'settings-outline'}
-                  size={24}
-                  color={isSideFanOn ? '#3B82F6' : '#6B7280'}
-                />
-                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                  Side Fan
-                </Text>
-              </View>
-              <Switch
-                value={isSideFanOn}
-                onValueChange={isOn => handleFanToggle('side', isOn)}
-                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
-                thumbColor={isSideFanOn ? '#3B82F6' : '#9CA3AF'}
-              />
-            </View>
-          </View>
-
-          <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mb-4 mt-2">
-            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
-              PRINTER SETTINGS
-            </Text>
-            {/* Delete Printer */}
-            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <View className="flex-row items-center">
-                <Ionicons name="trash-outline" size={24} color="#EF4444" />
-                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
-                  Unlink Printer
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={handleDeletePrinter}
-                className="px-6 py-2 rounded-lg"
-                activeOpacity={0.7}
-              >
-                <Text className="text-red-500 font-semibold">UNLINK</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </ScrollView>
+          <TouchableOpacity
+            onPress={handleToggleFullScreen}
+            className="absolute right-5 bottom-5 p-2 bg-black bg-opacity-50 rounded-full"
+          >
+            <Ionicons name="contract" size={24} color="white" />
+          </TouchableOpacity>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 };
