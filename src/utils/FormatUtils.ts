@@ -49,3 +49,32 @@ export const formatTextMaxEllipsis = (
 
   return text.substring(0, maxLength) + '...';
 };
+
+/**
+ * Converts seconds to a human-readable time format (hours and minutes only)
+ * @param seconds - The number of seconds to format
+ * @returns A formatted string like "2h30m", "45m", or "0m"
+ *
+ * @example
+ * const hours = formatTicksToReadableTime(9000); // "2h30m"
+ * const minutes = formatTicksToReadableTime(2700); // "45m"
+ * const short = formatTicksToReadableTime(30); // "0m"
+ */
+export const formatTicksToReadableTime = (seconds: number): string => {
+  if (!seconds || seconds <= 0) {
+    return '0m';
+  }
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  if (hours > 0) {
+    if (minutes > 0) {
+      return `${hours}h${minutes}m`;
+    } else {
+      return `${hours}h`;
+    }
+  } else {
+    return `${minutes}m`;
+  }
+};

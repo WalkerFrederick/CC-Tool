@@ -17,6 +17,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { WebView } from 'react-native-webview';
 import { useRoute } from '@react-navigation/native';
 import { usePrinterConnections } from '../contexts/PrinterConnectionsContext';
+import { formatTextMaxEllipsis } from '~/utils/FormatUtils';
 
 export const PrinterDetailsScreen = ({ navigation }: any) => {
   const route = useRoute();
@@ -27,6 +28,9 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
 
   const [refreshing, setRefreshing] = useState(false);
   const [webViewKey, setWebViewKey] = useState(0);
+  const [chamberFanState, setChamberFanState] = useState(false);
+  const [modelFanState, setModelFanState] = useState(false);
+  const [sideFanState, setSideFanState] = useState(false);
   const appState = useRef(AppState.currentState);
 
   // Handle app state changes to remount WebView when app comes back from background
@@ -52,6 +56,15 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
       subscription?.remove();
     };
   }, []);
+
+  // Sync fan states with printer status
+  useEffect(() => {
+    if (printer?.status?.CurrentFanSpeed) {
+      setModelFanState((printer.status.CurrentFanSpeed.ModelFan || 0) > 0);
+      setChamberFanState((printer.status.CurrentFanSpeed.BoxFan || 0) > 0);
+      setSideFanState((printer.status.CurrentFanSpeed.AuxiliaryFan || 0) > 0);
+    }
+  }, [printer?.status?.CurrentFanSpeed]);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -161,6 +174,56 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     sendCommand(printer.id, command);
   };
 
+  const handleFanToggle = (
+    fanType: 'model' | 'chamber' | 'side',
+    isOn: boolean
+  ) => {
+    if (!printer) return;
+
+    // Update the appropriate state
+    switch (fanType) {
+      case 'model':
+        setModelFanState(isOn);
+        break;
+      case 'chamber':
+        setChamberFanState(isOn);
+        break;
+      case 'side':
+        setSideFanState(isOn);
+        break;
+    }
+
+    // Create the command with all current fan states
+    const command = {
+      Id: `${printer.printerName}-id-${Date.now()}`,
+      Data: {
+        Cmd: 403,
+        Data: {
+          TargetFanSpeed: {
+            ModelFan:
+              fanType === 'model' ? (isOn ? 100 : 0) : modelFanState ? 100 : 0,
+            AuxiliaryFan:
+              fanType === 'side' ? (isOn ? 100 : 0) : sideFanState ? 100 : 0,
+            BoxFan:
+              fanType === 'chamber'
+                ? isOn
+                  ? 100
+                  : 0
+                : chamberFanState
+                  ? 100
+                  : 0,
+          },
+        },
+        RequestID: `${fanType}-fan-toggle-${Date.now()}`,
+        MainboardID: '',
+        TimeStamp: 0,
+        From: 1,
+      },
+    };
+
+    sendCommand(printer.id, command);
+  };
+
   const handleDeletePrinter = () => {
     if (!printer) return;
 
@@ -209,12 +272,20 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   // Get light status from printer data
   const isLightOn = printer.status?.LightStatus?.SecondLight === 1;
 
+  // Get fan status from printer data and sync with local state
+  const isModelFanOn = modelFanState;
+  const isChamberFanOn = chamberFanState;
+  const isSideFanOn = sideFanState;
+
   return (
     <SafeAreaView
       edges={['top']}
       className="flex-1 bg-slate-100 dark:bg-gray-900"
     >
-      <Header title="Printer Details" subtitle="View printer information" />
+      <Header
+        title={formatTextMaxEllipsis(printer.printerName, 26)}
+        subtitle="View printer information"
+      />
       <ScrollView
         className="flex-1 bg-slate-200 dark:bg-gray-800"
         refreshControl={
@@ -284,12 +355,12 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
             onStopPrint={handleStopPrint}
           />
           {/* Printer Controls Card */}
-          <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mb-4 mt-2">
-            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+          <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mt-2">
+            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
               CONTROLS
             </Text>
             {/* Light Toggle */}
-            <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
               <View className="flex-row items-center">
                 <Ionicons
                   name={isLightOn ? 'bulb' : 'bulb-outline'}
@@ -308,8 +379,73 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
               />
             </View>
 
+            {/* Chamber Fan Toggle */}
+            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={isChamberFanOn ? 'settings' : 'settings-outline'}
+                  size={24}
+                  color={isChamberFanOn ? '#3B82F6' : '#6B7280'}
+                />
+                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                  Chamber Fan
+                </Text>
+              </View>
+              <Switch
+                value={isChamberFanOn}
+                onValueChange={isOn => handleFanToggle('chamber', isOn)}
+                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                thumbColor={isChamberFanOn ? '#3B82F6' : '#9CA3AF'}
+              />
+            </View>
+
+            {/* Model Fan Toggle */}
+            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={isModelFanOn ? 'settings' : 'settings-outline'}
+                  size={24}
+                  color={isModelFanOn ? '#3B82F6' : '#6B7280'}
+                />
+                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                  Model Fan
+                </Text>
+              </View>
+              <Switch
+                value={isModelFanOn}
+                onValueChange={isOn => handleFanToggle('model', isOn)}
+                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                thumbColor={isModelFanOn ? '#3B82F6' : '#9CA3AF'}
+              />
+            </View>
+
+            {/* Side Fan Toggle */}
+            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name={isSideFanOn ? 'settings' : 'settings-outline'}
+                  size={24}
+                  color={isSideFanOn ? '#3B82F6' : '#6B7280'}
+                />
+                <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
+                  Side Fan
+                </Text>
+              </View>
+              <Switch
+                value={isSideFanOn}
+                onValueChange={isOn => handleFanToggle('side', isOn)}
+                trackColor={{ false: '#D1D5DB', true: '#DBEAFE' }}
+                thumbColor={isSideFanOn ? '#3B82F6' : '#9CA3AF'}
+              />
+            </View>
+          </View>
+
+          <View className="bg-white dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-4 mb-4 mt-2">
+            <Text className="text-xl font-bold text-gray-800 dark:text-gray-200">
+              PRINTER SETTINGS
+            </Text>
             {/* Delete Printer */}
-            <View className="flex-row items-center justify-between mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <View className="flex-row items-center justify-between mt-2 pt-4 border-t border-gray-200 dark:border-gray-700">
               <View className="flex-row items-center">
                 <Ionicons name="trash-outline" size={24} color="#EF4444" />
                 <Text className="ml-3 text-gray-800 dark:text-gray-200 font-semibold text-lg">
@@ -318,10 +454,10 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
               </View>
               <TouchableOpacity
                 onPress={handleDeletePrinter}
-                className="bg-red-500 px-4 py-2 rounded-lg"
+                className="px-6 py-2 rounded-lg"
                 activeOpacity={0.7}
               >
-                <Text className="text-white font-semibold">UNLINK</Text>
+                <Text className="text-red-500 font-semibold">UNLINK</Text>
               </TouchableOpacity>
             </View>
           </View>
