@@ -171,43 +171,6 @@ export const HomeScreen = ({ navigation }: any) => {
           </View>
         )}
 
-        {/* Feedback Survey Card */}
-        {printers.length > 0 && showSurvey && (
-          <View className="mx-2 mt-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <View className="flex-row items-start justify-between">
-              <View className="flex-row items-start flex-1">
-                <Ionicons
-                  name="chatbubble-outline"
-                  size={20}
-                  color="#2563EB"
-                  className="mt-0.5"
-                />
-                <View className="ml-2 flex-1">
-                  <Text className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-                    CC Tool Feedback Survey
-                  </Text>
-                  <Text className="text-sm text-blue-700 dark:text-blue-300 leading-5">
-                    Help improve CC Tool by sharing your feedback!
-                  </Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={handleDismissSurvey}
-                className="ml-2 p-1"
-              >
-                <Ionicons name="close" size={24} color="#6B7280" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              onPress={handleSurveyPress}
-              className="mt-6 bg-blue-500 rounded-lg py-3 px-4"
-            >
-              <Text className="text-white text-2xl text-center font-medium">
-                Take Survey
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
         {printers.length === 0 ? (
           // Getting Started Card
           <View className="flex-1 items-center justify-center p-6">
@@ -243,8 +206,9 @@ export const HomeScreen = ({ navigation }: any) => {
           // Printer Cards
           <>
             {printers.map(printer => (
-              <View className="w-full p-2" key={printer.id}>
+              <View className="w-full p-2 pb-0" key={printer.id}>
                 <PrinterCard
+                  showTemps={false}
                   key={printer.id}
                   printer={printer}
                   onPress={() => handlePrinterPress(printer.id)}

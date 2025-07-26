@@ -42,7 +42,7 @@ const getCommandName = (cmdCode: number): string => {
     case 386:
       return 'Enable Video';
     case 403:
-      return 'Toggle Light';
+      return 'Change Setting';
     default:
       return `Command ${cmdCode}`;
   }
@@ -376,7 +376,7 @@ export const PrinterConnectionsProvider = ({
           // Show alert to user
           Alert.alert(
             'Command Rejected',
-            `The command "${commandName}" was not accepted by ${printer.printerName}. Please Try again. Some controls are not available when printing.`,
+            `The command "${commandName}" was not accepted. The manufacturer has blocked this command while printing.`,
             [{ text: 'OK' }]
           );
         }
