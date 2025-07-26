@@ -31,6 +31,8 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
   const [chamberFanState, setChamberFanState] = useState(false);
   const [modelFanState, setModelFanState] = useState(false);
   const [sideFanState, setSideFanState] = useState(false);
+  const [isWebViewInteracting, setIsWebViewInteracting] = useState(false);
+  const webViewInteractionTimeout = useRef<NodeJS.Timeout | null>(null);
   const appState = useRef(AppState.currentState);
 
   // Handle app state changes to remount WebView when app comes back from background
@@ -66,8 +68,35 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     }
   }, [printer?.status?.CurrentFanSpeed]);
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (webViewInteractionTimeout.current) {
+        clearTimeout(webViewInteractionTimeout.current);
+      }
+    };
+  }, []);
+
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  const handleWebViewTouchStart = () => {
+    setIsWebViewInteracting(true);
+    // Clear any existing timeout
+    if (webViewInteractionTimeout.current) {
+      clearTimeout(webViewInteractionTimeout.current);
+      webViewInteractionTimeout.current = null;
+    }
+  };
+
+  const handleWebViewTouchEnd = () => {
+    // Set a timeout to reset the interaction state
+    // This gives a small buffer in case of gesture conflicts
+    webViewInteractionTimeout.current = setTimeout(() => {
+      setIsWebViewInteracting(false);
+      webViewInteractionTimeout.current = null;
+    }, 100);
   };
 
   const handlePrintControl = () => {
@@ -150,6 +179,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
     reconnectAll();
     // Keep the timeout to give visual feedback on the refresh control
     setTimeout(() => setRefreshing(false), 1000);
+    handleWebViewTouchEnd();
   }, [reconnectAll]);
 
   const handleLightToggle = (isOn: boolean) => {
@@ -291,6 +321,9 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        scrollEventThrottle={16}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isWebViewInteracting}
       >
         <View className="p-2">
           {/* Back Button */}
@@ -308,6 +341,7 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
           <View
             className="bg-gray-800 dark:bg-gray-600 rounded-lg mb-2 w-full overflow-hidden"
             style={{ aspectRatio: 16 / 9 }}
+            pointerEvents="box-none"
           >
             {printer.videoUrl ? (
               <WebView
@@ -324,6 +358,14 @@ export const PrinterDetailsScreen = ({ navigation }: any) => {
                 scalesPageToFit={true}
                 allowsInlineMediaPlayback={true}
                 mediaPlaybackRequiresUserAction={false}
+                scrollEnabled={true}
+                bounces={false}
+                showsHorizontalScrollIndicator={false}
+                showsVerticalScrollIndicator={false}
+                automaticallyAdjustContentInsets={false}
+                contentInsetAdjustmentBehavior="never"
+                onTouchStart={handleWebViewTouchStart}
+                onTouchEnd={handleWebViewTouchEnd}
                 onError={syntheticEvent => {
                   const { nativeEvent } = syntheticEvent;
                   console.warn('WebView error: ', nativeEvent);
