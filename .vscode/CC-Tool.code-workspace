@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {},
+	"extensions": {
+		"recommendations": [
+			"dbaeumer.vscode-eslint", // ESLint support (already included)
+			"esbenp.prettier-vscode", // Prettier support (already included)
+			"dsznajder.es7-react-js-snippets", // React/TypeScript snippets (already included)
+			"formulahendry.auto-rename-tag", // Auto rename HTML/JSX tags (already included)
+			"formulahendry.auto-close-tag", // Auto close HTML/JSX tags (already included)
+			"bradlc.vscode-tailwindcss", // TailwindCSS IntelliSense
+			"ms-vscode.vscode-typescript-next", // TypeScript/TSX support
+			"expo.vscode-expo-tools", // Expo tools integration
+			"csstools.postcss", // PostCSS support for TailwindCSS
+			"styled-components.vscode-styled-components" // Styled components highlighting
+		]
+	}
+}
